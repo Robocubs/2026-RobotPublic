@@ -1,0 +1,41 @@
+// Copyright (c) 2026 FRC Team 1701 Robocubs
+// http://github.com/Robocubs
+//
+// Use of this source code is governed by an MIT-style
+// license that can be found in the LICENSE file at
+// the root directory of this project.
+
+package frc.robot;
+
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.units.measure.Distance;
+import frc.robot.util.*;
+
+import static edu.wpi.first.units.Units.*;
+
+public final class FieldConstants {
+    public static final AprilTagFieldLayout fieldLayout =
+            AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
+
+    public static final Distance fieldLength = Meters.of(fieldLayout.getFieldLength());
+    public static final Distance fieldWidth = Meters.of(fieldLayout.getFieldWidth());
+
+    public static final Pose2d origin = GeometryUtil.autoFlip(Pose2d.kZero);
+    public static final Translation2d center = new Translation2d(fieldLength.div(2.0), fieldWidth.div(2.0));
+
+    public static final Pose2d redHubPose = fieldLayout
+            .getTagPose(10)
+            .get()
+            .toPose2d()
+            .transformBy(new Transform2d(Inches.of(-23.5), Inches.zero(), Rotation2d.kZero));
+    public static final Pose2d blueHubPose = fieldLayout
+            .getTagPose(26)
+            .get()
+            .toPose2d()
+            .transformBy(new Transform2d(Inches.of(-23.5), Inches.zero(), Rotation2d.kZero));
+}

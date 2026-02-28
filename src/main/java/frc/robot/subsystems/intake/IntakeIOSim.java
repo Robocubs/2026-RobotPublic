@@ -9,11 +9,11 @@ package frc.robot.subsystems.intake;
 
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
+import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import frc.robot.simulation.SimNotifier;
-import org.littletonrobotics.junction.Logger;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.intake.IntakeConstants.*;
@@ -44,6 +44,7 @@ public class IntakeIOSim extends IntakeIOHardware {
         }
 
         var motorSimState = pivotMotor.getSimState();
+        motorSimState.setMotorType(MotorType.KrakenX44);
         motorSimState.setRawRotorPosition(initialAngle);
 
         SimNotifier.register(deltaTime -> {
@@ -52,9 +53,6 @@ public class IntakeIOSim extends IntakeIOHardware {
 
             var angle = Radians.of(motorSim.getAngleRads());
             var velocity = RadiansPerSecond.of(motorSim.getVelocityRadPerSec());
-
-            Logger.recordOutput("Arm/SimArmAngle", angle);
-            Logger.recordOutput("Arm/SimArmVelocity", velocity);
 
             if (cancoder != null) {
                 var cancoderSimState = cancoder.getSimState();

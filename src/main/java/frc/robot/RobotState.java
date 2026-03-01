@@ -179,16 +179,21 @@ public class RobotState {
 
     @AutoLogOutput
     public Distance getTurretDistanceFromHub() {
-        return getTurretDistanceFrom(getHubPose());
-    }
-
-    public Pose2d getHubPose() {
-        return isBlue() ? FieldConstants.blueHubPose : FieldConstants.redHubPose;
+        return getDistanceToHub(getTurretPose().toPose2d());
     }
 
     @AutoLogOutput
     public Distance getDistanceToHub() {
-        return getDistanceTo(getHubPose());
+        return getDistanceToHub(pose);
+    }
+
+    public Distance getDistanceToHub(Pose2d pose) {
+        return Meters.of(
+                getHubPose().getTranslation().minus(pose.getTranslation()).getNorm());
+    }
+
+    public Pose2d getHubPose() {
+        return isBlue() ? FieldConstants.blueHubPose : FieldConstants.redHubPose;
     }
 
     public Rotation2d getTurretShootingRotation() {

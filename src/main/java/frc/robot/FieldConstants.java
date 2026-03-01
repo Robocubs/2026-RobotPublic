@@ -24,7 +24,6 @@ public final class FieldConstants {
 
     public static final Distance fieldLength = Meters.of(fieldLayout.getFieldLength());
     public static final Distance fieldWidth = Meters.of(fieldLayout.getFieldWidth());
-
     public static final Pose2d origin = GeometryUtil.autoFlip(Pose2d.kZero);
     public static final Translation2d center = new Translation2d(fieldLength.div(2.0), fieldWidth.div(2.0));
 

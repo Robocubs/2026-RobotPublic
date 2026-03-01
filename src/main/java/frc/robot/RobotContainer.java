@@ -140,7 +140,8 @@ public class RobotContainer {
                 drive,
                 () -> -driverController.getLeftY(),
                 () -> -driverController.getLeftX(),
-                () -> -driverController.getRightX()));
+                () -> -driverController.getRightX(),
+                driverController.rightTrigger()));
 
         intake.setDefaultCommand(intake.stop());
 
@@ -153,7 +154,8 @@ public class RobotContainer {
                         drive,
                         () -> -driverController.getLeftY(),
                         () -> -driverController.getLeftX(),
-                        () -> RobotState.getInstance().getHeadingTo(FieldConstants.center)));
+                        () -> RobotState.getInstance().getHeadingTo(FieldConstants.center),
+                        driverController.rightTrigger()));
 
         driverController.rightBumper().onTrue(drive.brake());
 
@@ -167,8 +169,7 @@ public class RobotContainer {
 
         driverController.back().onTrue(superstructure.zero());
 
-        driverController.rightTrigger().whileTrue(superstructure.runState(SuperstructureState.TRACKING_HUB));
-
+        driverController.rightTrigger().whileTrue(superstructure.shoot());
         driverController.leftTrigger().whileTrue(superstructure.runState(SuperstructureState.TUNING));
 
         driverController.x().onTrue(intake.intake());

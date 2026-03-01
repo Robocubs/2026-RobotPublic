@@ -14,8 +14,10 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.units.AngleUnit;
 import edu.wpi.first.units.AngularVelocityUnit;
+import edu.wpi.first.units.TimeUnit;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -53,6 +55,9 @@ public class Superstructure extends SubsystemBase {
             new LoggedTunableMeasure<>("Superstructure/IndexerShootingVelocity", RadiansPerSecond.of(60));
     private static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> kickerShootingVelocity =
             new LoggedTunableMeasure<>("Superstructure/KickerShootingVelocity", RadiansPerSecond.of(120));
+
+    private static final LoggedTunableMeasure<TimeUnit, Time> timeToShoot =
+            new LoggedTunableMeasure<>("Superstructure/TimeToShoot", Seconds.of(2));
 
     private final RobotState robotState = RobotState.getInstance();
     private final Flywheel flywheel;
@@ -175,7 +180,19 @@ public class Superstructure extends SubsystemBase {
     }
 
     public Command stop() {
-        return this.run(() -> applyState(SuperstructureState.STOP)).withName("Superstructure/Stop");
+        return run(() -> applyState(SuperstructureState.STOP)).withName("Superstructure/Stop");
+    }
+
+    public Command shoot() {
+        return run(() -> applyState(SuperstructureState.TRACKING_HUB))
+                .until(() -> flywheel.isAtGoal()
+                        && hood.isAtGoal()
+                        && turret.isAtGoal()
+                        && robotState.getMatchState().getTimeToHubActive().lt(timeToShoot.get()))
+                .andThen(run(() -> applyState(SuperstructureState.SHOOTING_HUB))
+                        .until(() ->
+                                robotState.getMatchState().getTimeToHubActive().gt(timeToShoot.get())))
+                .withName("Superstructure/Shoot");
     }
 
     public Command zero() {
@@ -187,7 +204,7 @@ public class Superstructure extends SubsystemBase {
     }
 
     public Command runState(SuperstructureState state) {
-        return this.run(() -> applyState(state)).withName("Superstructure/Run" + state);
+        return run(() -> applyState(state)).withName("Superstructure/Run" + state);
     }
 
     public SysIdCommandSet flywheelSysId() {

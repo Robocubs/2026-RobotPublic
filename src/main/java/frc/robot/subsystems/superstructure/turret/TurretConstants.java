@@ -43,7 +43,7 @@ public final class TurretConstants {
     public static final boolean maxRangeLessThanOneRotation = maxAngle.in(Rotations) - minAngle.in(Rotations) <= 1.0;
 
     public static final Transform3d robotToTurret =
-            new Transform3d(new Translation3d(Inches.of(10), Inches.of(5), Inches.of(19)), Rotation3d.kZero);
+            new Transform3d(new Translation3d(Inches.of(10), Inches.of(5), Inches.of(19.625)), Rotation3d.kZero);
     public static final Transform2d robotToTurret2d = new Transform2d(
             robotToTurret.getTranslation().toTranslation2d(),
             robotToTurret.getRotation().toRotation2d());

@@ -8,13 +8,12 @@
 package frc.robot.commands;
 
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.TimeUnit;
@@ -37,19 +36,60 @@ public class DriveCommands {
 
     private DriveCommands() {}
 
-    private static Translation2d getLinearVelocityFromJoysticks(double x, double y) {
+    private static Translation2d getLinearVelocityFromJoysticks(
+            double x, double y, BooleanSupplier smooth, JoystickDriveState state) {
+        var currentTime = Timer.getFPGATimestamp();
         var linearMagnitude = MathUtil.applyDeadband(Math.hypot(x, y), DriveConstants.translationDeadband);
         var linearDirection = new Rotation2d(Math.atan2(y, x));
 
-        linearMagnitude = linearMagnitude * linearMagnitude;
+        linearMagnitude = linearMagnitude * linearMagnitude * DriveConstants.maxSpeed.in(MetersPerSecond);
 
-        return new Pose2d(Translation2d.kZero, linearDirection)
-                .transformBy(new Transform2d(linearMagnitude, 0.0, Rotation2d.kZero))
-                .getTranslation();
+        var targetVelocity = new Translation2d(linearMagnitude, linearDirection);
+
+        if (smooth.getAsBoolean()) {
+            var maxSpeed = DriveConstants.tunableSmoothSpeed.get().in(MetersPerSecond);
+            var maxAcceleration = DriveConstants.tunableSmoothAcceleration.get().in(MetersPerSecondPerSecond);
+            var deltaTime = currentTime - state.lastLoopTime;
+            var accelerationLimit = maxAcceleration * deltaTime;
+
+            // Clamp requested speed to maxSpeed
+            if (linearMagnitude > maxSpeed) {
+                targetVelocity = new Translation2d(maxSpeed, linearDirection);
+            }
+
+            // Limit the rate of change of the full 2D velocity vector so direction
+            // changes are also acceleration-limited, not just magnitude changes.
+            var velocityDelta = targetVelocity.minus(state.lastSmoothVelocitySetpoint);
+            var deltaNorm = velocityDelta.getNorm();
+            if (deltaNorm > accelerationLimit) {
+                velocityDelta = velocityDelta.times(accelerationLimit / deltaNorm);
+            }
+
+            targetVelocity = state.lastSmoothVelocitySetpoint.plus(velocityDelta);
+            state.lastSmoothVelocitySetpoint = targetVelocity;
+        } else {
+            var speeds = RobotState.getInstance().getFieldVelocity();
+            var speedsTranslation = new Translation2d(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+            if (speedsTranslation.getNorm()
+                    > DriveConstants.tunableSmoothSpeed.get().in(MetersPerSecond)) {
+                speedsTranslation = speedsTranslation.times(
+                        DriveConstants.tunableSmoothSpeed.get().in(MetersPerSecond) / speedsTranslation.getNorm());
+            }
+
+            state.lastSmoothVelocitySetpoint = speedsTranslation;
+        }
+
+        state.lastLoopTime = currentTime;
+
+        return targetVelocity;
     }
 
     public static Command joystickDrive(
-            Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier, DoubleSupplier omegaSupplier) {
+            Drive drive,
+            DoubleSupplier xSupplier,
+            DoubleSupplier ySupplier,
+            DoubleSupplier omegaSupplier,
+            BooleanSupplier smooth) {
         var state = new JoystickDriveState();
 
         return drive.runOnce(() -> {
@@ -57,12 +97,11 @@ public class DriveCommands {
                     state.headingSetpoint = Optional.empty();
                 })
                 .andThen(Commands.run(() -> {
-                    var linearVelocity =
-                            getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
-                    var velocityX =
-                            DriveConstants.maxSpeed.times(linearVelocity.getX() * (RobotState.isBlue() ? 1.0 : -1.0));
-                    var velocityY =
-                            DriveConstants.maxSpeed.times(linearVelocity.getY() * (RobotState.isBlue() ? 1.0 : -1.0));
+                    var linearVelocity = getLinearVelocityFromJoysticks(
+                            xSupplier.getAsDouble() * (RobotState.isBlue() ? 1.0 : -1.0),
+                            ySupplier.getAsDouble() * (RobotState.isBlue() ? 1.0 : -1.0),
+                            smooth,
+                            state);
                     var omega = MathUtil.applyDeadband(omegaSupplier.getAsDouble(), DriveConstants.rotationDeadband);
 
                     var rotationDemandIsZero = MathUtil.isNear(0.0, omega, Constants.epsilon);
@@ -83,15 +122,16 @@ public class DriveCommands {
                         }
 
                         drive.setFieldSpeedsFacingHeading(
-                                velocityX, velocityY, drive.rawHeadingToFieldHeading(state.headingSetpoint.get()));
+                                MetersPerSecond.of(linearVelocity.getX()),
+                                MetersPerSecond.of(linearVelocity.getY()),
+                                drive.rawHeadingToFieldHeading(state.headingSetpoint.get()));
 
                         Logger.recordOutput("Commands/JoystickDrive/HeadingSetpoint", state.headingSetpoint.get());
                     } else {
                         state.headingSetpoint = Optional.empty();
                         omega = Math.copySign(omega * omega, omega)
                                 * DriveConstants.maxAngularVelocity.in(RadiansPerSecond);
-                        var speeds =
-                                new ChassisSpeeds(velocityX.in(MetersPerSecond), velocityY.in(MetersPerSecond), omega);
+                        var speeds = new ChassisSpeeds(linearVelocity.getX(), linearVelocity.getY(), omega);
 
                         drive.setFieldSpeeds(speeds);
                     }
@@ -100,17 +140,25 @@ public class DriveCommands {
     }
 
     public static Command joystickDriveAtAngle(
-            Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier, Supplier<Rotation2d> rotationSupplier) {
+            Drive drive,
+            DoubleSupplier xSupplier,
+            DoubleSupplier ySupplier,
+            Supplier<Rotation2d> rotationSupplier,
+            BooleanSupplier smooth) {
+        var state = new JoystickDriveState();
+
         return drive.run(() -> {
-                    var linearVelocity =
-                            getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
-                    var velocityX =
-                            DriveConstants.maxSpeed.times(linearVelocity.getX() * (RobotState.isBlue() ? 1.0 : -1.0));
-                    var velocityY =
-                            DriveConstants.maxSpeed.times(linearVelocity.getY() * (RobotState.isBlue() ? 1.0 : -1.0));
+                    var linearVelocity = getLinearVelocityFromJoysticks(
+                            xSupplier.getAsDouble() * (RobotState.isBlue() ? 1.0 : -1.0),
+                            ySupplier.getAsDouble() * (RobotState.isBlue() ? 1.0 : -1.0),
+                            smooth,
+                            state);
                     var headingGoal = rotationSupplier.get();
 
-                    drive.setFieldSpeedsFacingHeading(velocityX, velocityY, headingGoal);
+                    drive.setFieldSpeedsFacingHeading(
+                            MetersPerSecond.of(linearVelocity.getX()),
+                            MetersPerSecond.of(linearVelocity.getY()),
+                            headingGoal);
 
                     Logger.recordOutput("Commands/JoystickDrive/HeadingGoal", headingGoal);
                 })
@@ -120,5 +168,7 @@ public class DriveCommands {
     private static class JoystickDriveState {
         Optional<Rotation2d> headingSetpoint = Optional.empty();
         double joystickLastTouched = 0.0;
+        Translation2d lastSmoothVelocitySetpoint = Translation2d.kZero;
+        double lastLoopTime = 0.0;
     }
 }

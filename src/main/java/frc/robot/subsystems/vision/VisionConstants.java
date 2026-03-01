@@ -53,6 +53,6 @@ public final class VisionConstants {
                     Inches.of(5),
                     Inches.zero(),
                     Inches.of(6.75),
-                    new Rotation3d(Degrees.zero(), Degrees.of(-45), Degrees.zero())),
+                    new Rotation3d(Degrees.zero(), Degrees.of(-30), Degrees.zero())),
             (timestamp) -> RobotState.getInstance().getTurretRotation(timestamp));
 }

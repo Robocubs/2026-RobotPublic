@@ -15,6 +15,8 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.LinearAccelerationUnit;
+import edu.wpi.first.units.LinearVelocityUnit;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
@@ -22,6 +24,7 @@ import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.generated.TunerConstants;
 import frc.robot.util.UnitsUtil;
+import frc.robot.util.tuning.LoggedTunableMeasure;
 import frc.robot.util.tuning.LoggedTunableNumber;
 
 import static edu.wpi.first.units.Units.*;
@@ -30,6 +33,11 @@ import static edu.wpi.first.units.Units.*;
 public final class DriveConstants {
     public static final LoggedTunableNumber rotationP = new LoggedTunableNumber("Drive/RotationP", 7.0);
     public static final LoggedTunableNumber rotationD = new LoggedTunableNumber("Drive/RotationD", 0.04);
+    public static final LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity> tunableSmoothSpeed =
+            new LoggedTunableMeasure<>("Drive/SmoothSpeed", MetersPerSecond.of(1.5));
+    public static final LoggedTunableMeasure<LinearAccelerationUnit, LinearAcceleration> tunableSmoothAcceleration =
+            new LoggedTunableMeasure<>(
+                    "Drive/SmoothAcceleration", tunableSmoothSpeed.get().div(Seconds.of(0.25)));
 
     public static final Distance driveBaseRadius = Meters.of(Math.hypot(
                     TunerConstants.FrontLeft.LocationX - TunerConstants.BackRight.LocationX,
@@ -52,6 +60,7 @@ public final class DriveConstants {
     public static final LinearVelocity maxSpeed = TunerConstants.kSpeedAt12Volts;
     public static final LinearAcceleration maxAcceleration =
             maxSpeed.div(Seconds.of(0.33)); // Future: calculate based on robot mass/kT/slip current
+
     public static final AngularVelocity maxAngularVelocity = UnitsUtil.toAngularVelocity(maxSpeed, driveBaseRadius);
     public static final AngularAcceleration maxAngularAcceleration = maxAngularVelocity.div(Seconds.of(0.33));
 

@@ -91,7 +91,7 @@ public class RobotState {
         return !isBlue();
     }
 
-    public void update() {
+    void update() {
         matchState.update();
     }
 

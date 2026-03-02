@@ -9,57 +9,101 @@ package frc.robot;
 
 import java.util.Optional;
 
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 import static edu.wpi.first.units.Units.*;
 
-@NoArgsConstructor(access = AccessLevel.PACKAGE)
 public class MatchState {
+    public enum Phase {
+        DISABLED,
+        AUTO,
+        TRANSITION,
+        SHIFT1,
+        SHIFT2,
+        SHIFT3,
+        SHIFT4,
+        ENDGAME
+    }
+
     private static final double transitionEnd = 130.0;
     private static final double shift1End = 105.0;
     private static final double shift2End = 80.0;
     private static final double shift3End = 55.0;
     private static final double shift4End = 30.0;
 
-    private final LoggedNetworkBoolean overrideRedWonAuto =
-            new LoggedNetworkBoolean("OverrideRedWonAuto", Constants.currentMode == Constants.Mode.SIM);
-    private final LoggedNetworkBoolean overrideBlueWonAuto = new LoggedNetworkBoolean("OverrideBlueWonAuto", false);
+    private final LoggedDashboardChooser<Optional<Alliance>> autoWinnerOverride =
+            new LoggedDashboardChooser<>("AutoWinnerOverride");
 
     private Optional<Alliance> winner = Optional.empty();
     private boolean wonAuto = false;
+    private @AutoLogOutput @Getter Phase phase = Phase.DISABLED;
     private @AutoLogOutput @Getter boolean hubActive = false;
     private @AutoLogOutput @Getter Time timeToHubActive = Seconds.zero();
     private @AutoLogOutput @Getter Time timeToHubInactive = Seconds.zero();
+
+    MatchState() {
+        autoWinnerOverride.addDefaultOption("Auto", Optional.empty());
+        autoWinnerOverride.addOption("Red", Optional.of(Alliance.Red));
+        autoWinnerOverride.addOption("Blue", Optional.of(Alliance.Blue));
+
+        // Explicitly reset to Auto on every launch so no persisted NT value carries over.
+        NetworkTableInstance.getDefault()
+                .getTable("SmartDashboard")
+                .getSubTable("AutoWinnerOverride")
+                .getEntry("selected")
+                .setString("Auto");
+    }
 
     void update() {
         winner = computeAutoWinner();
         wonAuto = winner.isPresent()
                 && DriverStation.getAlliance().isPresent()
                 && winner.get() == DriverStation.getAlliance().get();
-        hubActive = computeHubActive(winner);
+        phase = computePhase();
+        hubActive = computeHubActive();
         timeToHubActive = computeTimeToHubActive();
         timeToHubInactive = computeTimeToHubInactive();
 
         SmartDashboard.putString("AutoWinner", winner.map(Enum::name).orElse("Unknown"));
-        SmartDashboard.putNumber("TimeToActive", timeToHubActive.in(Seconds));
-        SmartDashboard.putNumber("TimeToInactive", timeToHubInactive.in(Seconds));
+    }
+
+    private Phase computePhase() {
+        if (DriverStation.isDisabled()) {
+            return Phase.DISABLED;
+        }
+        if (DriverStation.isAutonomous()) {
+            return Phase.AUTO;
+        }
+        var matchTime = DriverStation.getMatchTime();
+        if (matchTime > transitionEnd) {
+            return Phase.TRANSITION;
+        }
+        if (matchTime > shift1End) {
+            return Phase.SHIFT1;
+        }
+        if (matchTime > shift2End) {
+            return Phase.SHIFT2;
+        }
+        if (matchTime > shift3End) {
+            return Phase.SHIFT3;
+        }
+        if (matchTime > shift4End) {
+            return Phase.SHIFT4;
+        }
+        return Phase.ENDGAME;
     }
 
     private Optional<Alliance> computeAutoWinner() {
-        if (overrideRedWonAuto.get()) {
-            return Optional.of(Alliance.Red);
-        }
-
-        if (overrideBlueWonAuto.get()) {
-            return Optional.of(Alliance.Blue);
+        var override = autoWinnerOverride.get();
+        if (override != null && override.isPresent()) {
+            return override;
         }
 
         var gameData = DriverStation.getGameSpecificMessage();
@@ -74,34 +118,16 @@ public class MatchState {
         };
     }
 
-    private boolean computeHubActive(Optional<Alliance> winner) {
+    private boolean computeHubActive() {
         if (winner.isEmpty()) {
             return true;
         }
 
-        var matchTime = DriverStation.getMatchTime();
-
-        if (matchTime > transitionEnd) {
-            return true;
-        }
-
-        if (matchTime > shift1End) {
-            return !wonAuto;
-        }
-
-        if (matchTime > shift2End) {
-            return wonAuto;
-        }
-
-        if (matchTime > shift3End) {
-            return !wonAuto;
-        }
-
-        if (matchTime > shift4End) {
-            return wonAuto;
-        }
-
-        return true;
+        return switch (phase) {
+            case DISABLED, AUTO, TRANSITION, ENDGAME -> true;
+            case SHIFT1, SHIFT3 -> !wonAuto;
+            case SHIFT2, SHIFT4 -> wonAuto;
+        };
     }
 
     private Time computeTimeToHubActive() {
@@ -140,14 +166,14 @@ public class MatchState {
             return Seconds.zero();
         }
 
-        if (!winner.isPresent()) {
-            return Seconds.zero();
-        }
-
         var matchTime = DriverStation.getMatchTime();
 
         if (matchTime < 0) {
             return Seconds.zero();
+        }
+
+        if (!winner.isPresent()) {
+            return Seconds.of(matchTime);
         }
 
         if (wonAuto) {

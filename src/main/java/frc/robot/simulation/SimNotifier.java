@@ -7,8 +7,8 @@
 
 package frc.robot.simulation;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 import edu.wpi.first.units.measure.Time;
@@ -23,7 +23,7 @@ public class SimNotifier {
 
     private static SimNotifier instance = null;
 
-    private final List<Consumer<Time>> callbacks = new ArrayList<>();
+    private final List<Consumer<Time>> callbacks = new CopyOnWriteArrayList<>();
     private final Notifier simNotifier;
     private long lastSimTime;
 

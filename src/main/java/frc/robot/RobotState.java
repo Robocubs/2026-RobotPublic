@@ -72,6 +72,7 @@ public class RobotState {
     private @AutoLogOutput @Getter ChassisSpeeds targetFieldVelocity = new ChassisSpeeds();
     private @AutoLogOutput @Getter LinearVelocity robotSpeed = MetersPerSecond.zero();
     private @AutoLogOutput @Getter LinearVelocity maxSpeed = DriveConstants.maxSpeed;
+    private @AutoLogOutput @Getter FieldZone currentFieldZone = FieldZone.ALLIANCE_ZONE;
 
     @Getter(lazy = true)
     private static final RobotState instance = new RobotState();
@@ -93,6 +94,52 @@ public class RobotState {
 
     void update() {
         matchState.update();
+        double x = pose.getX();
+        if (isBlue()) {
+            if (x < FieldConstants.blueAllianceThreshold) {
+                currentFieldZone = FieldZone.ALLIANCE_ZONE;
+            } else if (x <= FieldConstants.blueNeutralZoneStart) {
+                currentFieldZone = FieldZone.ALLIANCE_BUMP;
+            } else if (x < FieldConstants.redNeutralZoneStart) {
+                currentFieldZone = FieldZone.NEUTRAL_ZONE;
+            } else if (x <= FieldConstants.redAllianceThreshold) {
+                currentFieldZone = FieldZone.OPPONENT_BUMP;
+            } else {
+                currentFieldZone = FieldZone.OPPONENT_ZONE;
+            }
+        } else {
+            if (x > FieldConstants.redAllianceThreshold) {
+                currentFieldZone = FieldZone.ALLIANCE_ZONE;
+            } else if (x >= FieldConstants.redNeutralZoneStart) {
+                currentFieldZone = FieldZone.ALLIANCE_BUMP;
+            } else if (x > FieldConstants.blueNeutralZoneStart) {
+                currentFieldZone = FieldZone.NEUTRAL_ZONE;
+            } else if (x >= FieldConstants.blueAllianceThreshold) {
+                currentFieldZone = FieldZone.OPPONENT_BUMP;
+            } else {
+                currentFieldZone = FieldZone.OPPONENT_ZONE;
+            }
+        }
+    }
+
+    public boolean inAllianceZone() {
+        return currentFieldZone == FieldZone.ALLIANCE_ZONE;
+    }
+
+    public boolean onAllianceBump() {
+        return currentFieldZone == FieldZone.ALLIANCE_BUMP;
+    }
+
+    public boolean inNeutralZone() {
+        return currentFieldZone == FieldZone.NEUTRAL_ZONE;
+    }
+
+    public boolean onOpponentBump() {
+        return currentFieldZone == FieldZone.OPPONENT_BUMP;
+    }
+
+    public boolean inOpponentZone() {
+        return currentFieldZone == FieldZone.OPPONENT_ZONE;
     }
 
     @AutoLogOutput
@@ -290,5 +337,13 @@ public class RobotState {
         public final double timestampSeconds;
         public final Pose3d pose;
         public final Matrix<N3, N1> stdDevs;
+    }
+
+    public enum FieldZone {
+        ALLIANCE_ZONE,
+        ALLIANCE_BUMP,
+        NEUTRAL_ZONE,
+        OPPONENT_BUMP,
+        OPPONENT_ZONE
     }
 }

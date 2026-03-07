@@ -31,9 +31,9 @@ public class Turret {
     private final TurretInputsAutoLogged inputs = new TurretInputsAutoLogged();
     private final EasyCRT easyCRT =
             new EasyCRT(new EasyCRTConfig(() -> inputs.encoder1Position, () -> inputs.encoder2Position)
-                    .withEncoderRatios(cancoder1Reduction, cancoder2Reduction)
+                    .withCommonDriveGear(commonGearReduction, commonGearTeeth, cancoder1Teeth, cancoder2Teeth)
                     .withAbsoluteEncoderOffsets(cancoder1Offset, cancoder2Offset)
-                    .withMechanismRange(minAngle, maxAngle)
+                    .withMechanismRange(crtMinAngle, crtMaxAngle)
                     .withMatchTolerance(crtMatchTolerance)
                     .withAbsoluteEncoderInversions(encoder1Inverted, encoder2Inverted));
 

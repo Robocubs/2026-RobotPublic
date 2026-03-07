@@ -25,18 +25,23 @@ public final class TurretConstants {
     public static final int cancoder1Id = 26;
     public static final int cancoder2Id = 27;
 
-    public static final double reduction = 48.0 / 12.0 * 100.0 / 10.0;
+    public static final double commonGearReduction = 100.0 / 10.0;
+    public static final int commonGearTeeth = 48;
+    public static final int drivePinionTeeth = 12;
+    public static final double reduction = (double) commonGearTeeth / (double) drivePinionTeeth * commonGearReduction;
     public static final InvertedValue motorInvertedValue = InvertedValue.CounterClockwise_Positive;
     public static final MomentOfInertia moi = PoundSquareInches.of(10.0 * 4.5 * 4.5);
 
-    public static final double cancoder1Reduction = 100.0 / 13.0;
-    public static final double cancoder2Reduction = 100.0 / 17.0;
-    public static final Angle cancoder1Offset = Radians.zero();
-    public static final Angle cancoder2Offset = Radians.zero();
-    public static final Angle crtMatchTolerance = Degrees.of(2.0);
-    public static final boolean encoder1Inverted = false;
-    public static final boolean encoder2Inverted = false;
+    public static final int cancoder1Teeth = 32;
+    public static final int cancoder2Teeth = 31;
+    public static final Angle cancoder1Offset = Radians.of(3.059);
+    public static final Angle cancoder2Offset = Radians.of(-1.131);
+    public static final Angle crtMatchTolerance = Radians.of(0.1);
+    public static final boolean encoder1Inverted = true;
+    public static final boolean encoder2Inverted = true;
 
+    public static final Angle crtMinAngle = Rotations.of(-1);
+    public static final Angle crtMaxAngle = Rotations.of(1);
     public static final Angle minAngle = Degrees.of(-200);
     public static final Angle maxAngle = Degrees.of(200);
     public static final Angle midAngle = maxAngle.minus(minAngle).div(2);

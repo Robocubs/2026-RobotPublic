@@ -22,6 +22,7 @@ import frc.robot.subsystems.drive.DriveIOReplay;
 import frc.robot.subsystems.drive.DriveIOSim;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
+import frc.robot.subsystems.intake.IntakeIOHardware;
 import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.superstructure.Superstructure.SuperstructureState;
@@ -69,7 +70,7 @@ public class RobotContainer {
             case REAL:
                 drive = new Drive(new DriveIOHardware());
                 vision = new Vision(new AprilTagIO[] {new AprilTagIOHardware(VisionConstants.frontAprilTagConfig)});
-                intake = new Intake(new IntakeIO() {});
+                intake = new Intake(new IntakeIOHardware());
                 superstructure = new Superstructure(
                         new FlywheelIOHardware(),
                         new HoodIOHardware(),
@@ -129,6 +130,8 @@ public class RobotContainer {
             superstructure.turretSysId().addAutos(characterizationChooser, "Superstructure Turret");
             superstructure.indexerSysId().addAutos(characterizationChooser, "Superstructure Indexer");
             superstructure.kickerSysId().addAutos(characterizationChooser, "Superstructure Kicker");
+
+            intake.extensionSysId().addAutos(characterizationChooser, "Intake Extension");
         }
     }
 
@@ -175,5 +178,8 @@ public class RobotContainer {
         driverController.x().onTrue(intake.intake());
 
         driverController.b().onTrue(intake.stow());
+
+        // Dashboard bindings
+        SmartDashboard.putData("ZeroIntake", intake.zeroRoutine());
     }
 }

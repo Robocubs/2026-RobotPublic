@@ -7,62 +7,45 @@
 
 package frc.robot.subsystems.intake;
 
-import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.SensorDirectionValue;
-import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import edu.wpi.first.wpilibj.simulation.ElevatorSim;
 import frc.robot.simulation.SimNotifier;
+import org.littletonrobotics.junction.Logger;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.intake.IntakeConstants.*;
 
 public class IntakeIOSim extends IntakeIOHardware {
     public IntakeIOSim() {
-        var initialAngle = Degrees.of(90);
-        var gearbox = DCMotor.getKrakenX44Foc(numPivotMotors);
-        var motorSim = new SingleJointedArmSim(
-                gearbox,
-                pivotReduction,
-                moi.in(KilogramSquareMeters),
-                length.in(Meters),
-                minimumAngle.in(Radians),
-                maximumAngle.in(Radians),
-                true,
-                initialAngle.in(Radians),
-                0.001,
-                0.0);
+        var initialPosition = retractedPosition;
+        var motorSim = new ElevatorSim(
+                DCMotor.getKrakenX44Foc(numExtensionMotors),
+                extensionReduction,
+                mass.in(Kilograms),
+                distancePerRotation.in(Meters) / (2 * Math.PI),
+                minimumExtension.in(Meters),
+                maximumExtension.in(Meters),
+                false,
+                initialPosition.in(Meters));
 
-        var motorSign = motorInvertedValue == InvertedValue.CounterClockwise_Positive ? 1 : -1;
-        var cancoderSign = cancoderSensorDirection == SensorDirectionValue.CounterClockwise_Positive ? 1 : -1;
-
-        if (cancoder != null) {
-            var cancoderSimState = cancoder.getSimState();
-            cancoderSimState.setRawPosition(
-                    initialAngle.minus(encoderOffset.get()).times(cancoderSign));
-        }
-
-        var motorSimState = pivotMotor.getSimState();
-        motorSimState.setMotorType(MotorType.KrakenX44);
-        motorSimState.setRawRotorPosition(initialAngle);
+        var motorSimState = extensionMotor.getSimState();
+        motorSimState.setRawRotorPosition(
+                Rotations.of(initialPosition.in(Meters) / distancePerRotation.in(Meters) * extensionReduction));
 
         SimNotifier.register(deltaTime -> {
-            motorSim.setInputVoltage(motorSimState.getMotorVoltage() * motorSign);
+            motorSim.setInputVoltage(motorSimState.getMotorVoltage());
             motorSim.update(deltaTime.in(Seconds));
 
-            var angle = Radians.of(motorSim.getAngleRads());
-            var velocity = RadiansPerSecond.of(motorSim.getVelocityRadPerSec());
+            var position = Rotations.of(motorSim.getPositionMeters() / distancePerRotation.in(Meters));
+            var velocity =
+                    RotationsPerSecond.of(motorSim.getVelocityMetersPerSecond() / distancePerRotation.in(Meters));
 
-            if (cancoder != null) {
-                var cancoderSimState = cancoder.getSimState();
-                cancoderSimState.setRawPosition(angle.minus(encoderOffset.get()).times(cancoderSign));
-                cancoderSimState.setVelocity(velocity.times(cancoderSign));
-                cancoderSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
-            }
+            Logger.recordOutput("Intake/SimExtensionPosition", position);
+            Logger.recordOutput("Intake/SimExtensionVelocity", velocity);
 
-            motorSimState.setRawRotorPosition(angle.times(pivotReduction));
-            motorSimState.setRotorVelocity(velocity.times(pivotReduction));
+            motorSimState.setRawRotorPosition(position.times(extensionReduction));
+            motorSimState.setRotorVelocity(velocity.times(extensionReduction));
             motorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
         });
     }

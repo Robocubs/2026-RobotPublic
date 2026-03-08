@@ -18,6 +18,7 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.PhysicsUtil;
+import lombok.Getter;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 import yams.units.EasyCRT;
@@ -40,6 +41,7 @@ public class Turret {
     private @AutoLogOutput boolean hasBeenZeroed = false;
     private double lastZeroedMeasuredError = Double.POSITIVE_INFINITY;
     private Optional<Angle> lastPositionControl = Optional.empty();
+    private @AutoLogOutput @Getter boolean isWrapping = false;
 
     public static record TurretSetpoint(Angle position, AngularVelocity velocity) {}
 
@@ -82,6 +84,7 @@ public class Turret {
     public void setAngleUnoptimized(Angle angle) {
         io.setPosition(angle);
         lastPositionControl = Optional.of(angle);
+        isWrapping = false;
     }
 
     public void setAngle(Angle angle) {
@@ -99,6 +102,12 @@ public class Turret {
     public void setAngle(Angle angleRadians, AngularVelocity velocity) {
         var targetRadians = optimizeAngle(angleRadians.in(Radians));
         var target = Radians.of(targetRadians);
+        if (!MathUtil.isNear(targetRadians, inputs.position.in(Radians), Math.PI / 4.0)) {
+            isWrapping = true;
+        } else if (isAtAngle(lastPositionControl.orElse(target))) {
+            isWrapping = false;
+        }
+
         io.setPosition(target, velocity);
         lastPositionControl = Optional.of(target);
     }
@@ -137,6 +146,7 @@ public class Turret {
     public void stop() {
         io.stop();
         lastPositionControl = Optional.empty();
+        isWrapping = false;
     }
 
     public void resetPosition() {

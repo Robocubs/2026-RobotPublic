@@ -11,6 +11,8 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import org.littletonrobotics.junction.AutoLog;
 
@@ -26,25 +28,30 @@ public interface IntakeIO {
         public Current rollerSupplyCurrent = Amps.zero();
         public double rollerTemperature = 0.0;
 
-        public Angle pivotAngle = Radians.zero();
-        public Angle pivotPosition = Radians.zero();
-        public AngularVelocity pivotVelocity = RadiansPerSecond.zero();
-        public Voltage pivotVoltage = Volts.zero();
-        public Current pivotStatorCurrent = Amps.zero();
-        public Current pivotSupplyCurrent = Amps.zero();
-        public double pivotTemperature = 0.0;
-        public Angle pivotClosedLoopReference = Radians.zero();
+        public Distance extensionPosition = Meters.zero();
+        public LinearVelocity extensionVelocity = MetersPerSecond.zero();
+        public Voltage extensionVoltage = Volts.zero();
+        public Current extensionStatorCurrent = Amps.zero();
+        public Current extensionSupplyCurrent = Amps.zero();
+        public double extensionTemperature = 0.0;
+        public Distance extensionClosedLoopReference = Meters.zero();
     }
 
     public default void updateInputs(IntakeInputs inputs) {}
 
     public default void setRollerOutput(double value) {}
 
-    public default void setPivotOutput(double value) {}
+    public default void setExtensionOutput(double value) {}
 
-    public default void setPivotAngle(Angle position) {}
+    public default void setExtensionOutput(double value, boolean ignoreLimits) {}
 
-    public default void setPivotNeutralMode(NeutralModeValue mode) {}
+    public default void setExtensionPosition(Distance position) {}
+
+    public default void setExtensionNeutralMode(NeutralModeValue mode) {}
+
+    public default void setExtensionVoltage(Voltage voltage) {}
+
+    public default void setExtensionEncoderPosition(Distance position) {}
 
     public default void stop() {}
 }

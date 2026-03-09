@@ -61,6 +61,12 @@ public class IntakeIOHardware implements IntakeIO {
     private static final LoggedTunableNumber extensionKP = new LoggedTunableNumber("Intake/ExtensionKP", 0.0);
     private static final LoggedTunableNumber extensionKD = new LoggedTunableNumber("Intake/ExtensionKD", 0.0);
 
+    protected final TalonFX rollerMotor;
+    protected final TalonFXS extensionMotor;
+
+    private final TalonFXConfiguration rollerConfig;
+    private final TalonFXSConfiguration extensionConfig;
+
     private final StatusSignalCollection signals = new StatusSignalCollection();
     private final StatusSignal<Angle> rollerPositionSignal;
     private final StatusSignal<AngularVelocity> rollerVelocitySignal;
@@ -81,10 +87,6 @@ public class IntakeIOHardware implements IntakeIO {
     private final MotionMagicVoltage extensionMotionMagicControlRequest = new MotionMagicVoltage(0.0).withSlot(0);
     private final PositionVoltage extensionPositionControlRequest = new PositionVoltage(0.0).withSlot(1);
     private final VoltageOut extensionVoltageControlRequest = new VoltageOut(0.0);
-
-    protected final TalonFX rollerMotor;
-    protected final TalonFXS extensionMotor;
-    private final TalonFXSConfiguration extensionConfig;
 
     public IntakeIOHardware() {
         rollerMotor = new TalonFX(rollerMotorId, PhoenixCANBus.canivore());
@@ -127,15 +129,16 @@ public class IntakeIOHardware implements IntakeIO {
                         .withSupplyCurrentLimit(Amps.of(40))
                         .withSupplyCurrentLowerLimit(30));
 
-        PhoenixUtil.tryUntilOk(5, () -> extensionMotor.getConfigurator().apply(extensionConfig));
+        PhoenixUtil.tryUntilOk(() -> extensionMotor.getConfigurator().apply(extensionConfig));
 
-        TalonFXConfiguration rollerConfig = new TalonFXConfiguration()
+        rollerConfig = new TalonFXConfiguration()
                 .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
                 .withCurrentLimits(new CurrentLimitsConfigs()
                         .withStatorCurrentLimit(Amps.of(120))
                         .withSupplyCurrentLimit(Amps.of(60))
                         .withSupplyCurrentLowerLimit(40));
-        PhoenixUtil.tryUntilOk(5, () -> rollerMotor.getConfigurator().apply(rollerConfig));
+
+        PhoenixUtil.tryUntilOk(() -> rollerMotor.getConfigurator().apply(rollerConfig));
 
         rollerPositionSignal = rollerMotor.getPosition();
         rollerVelocitySignal = rollerMotor.getVelocity();

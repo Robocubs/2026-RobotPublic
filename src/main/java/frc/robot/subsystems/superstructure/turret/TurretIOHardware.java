@@ -28,12 +28,12 @@ import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.Constants;
 import frc.robot.PhoenixCANBus;
+import frc.robot.util.PhoenixUtil;
 import frc.robot.util.tuning.LoggedTunableNumber;
 import frc.robot.util.tuning.LoggedTunableValue;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.superstructure.turret.TurretConstants.*;
-import static frc.robot.util.PhoenixUtil.*;
 
 public class TurretIOHardware implements TurretIO {
     private static final LoggedTunableNumber kS = new LoggedTunableNumber("Turret/kS", 0.3033);
@@ -89,7 +89,7 @@ public class TurretIOHardware implements TurretIO {
                                 .withSupplyCurrentLimit(Amps.of(40))
                                 .withSupplyCurrentLowerLimit(Amps.of(30)));
 
-        tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
+        PhoenixUtil.tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
 
         positionSignal = motor.getPosition();
         velocitySignal = motor.getVelocity();
@@ -123,7 +123,7 @@ public class TurretIOHardware implements TurretIO {
     public void updateInputs(TurretInputs inputs) {
         signals.refreshAll();
 
-        inputs.timestamp = getFPGATimestamp(positionSignal);
+        inputs.timestamp = PhoenixUtil.getFPGATimestamp(positionSignal);
         inputs.position = positionSignal.getValue();
         inputs.velocity = velocitySignal.getValue();
         inputs.voltage = voltageSignal.getValue();
@@ -144,7 +144,7 @@ public class TurretIOHardware implements TurretIO {
                     motorConfig.Slot0.kA = kA.get();
                     motorConfig.Slot0.kP = kP.get();
                     motorConfig.Slot0.kD = kD.get();
-                    tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
+                    PhoenixUtil.tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
                 },
                 kS,
                 kV,

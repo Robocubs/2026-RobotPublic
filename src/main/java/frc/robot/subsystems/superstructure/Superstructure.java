@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.FieldConstants;
 import frc.robot.RobotState;
 import frc.robot.commands.characterization.SysIdCommandSet;
 import frc.robot.subsystems.superstructure.flywheel.Flywheel;
@@ -134,6 +135,22 @@ public class Superstructure extends SubsystemBase {
                 indexer.stop();
                 kicker.stop();
             }
+            case TRACKING_NEUTRAL -> {
+                var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForPassing();
+                flywheel.stop();
+                hood.setAngle(superstructureSetpoint.hoodAngle);
+                turret.setAngle(superstructureSetpoint.turretAngle);
+                indexer.stop();
+                kicker.stop();
+            }
+            case FEEDING -> {
+                var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForPassing();
+                flywheel.setVelocity(superstructureSetpoint.flywheelVelocity);
+                hood.setAngle(superstructureSetpoint.hoodAngle);
+                turret.setAngle(superstructureSetpoint.turretAngle);
+                indexer.setVelocity(indexerShootingVelocity.get());
+                kicker.setVelocity(kickerShootingVelocity.get());
+            }
             case TUNING -> {
                 var shouldFeed = tuningDebouncer.calculate(flywheel.isAtVelocity(flywheelVelocity.get())
                         && hood.isAtAngle(hoodAngle.get())
@@ -198,6 +215,20 @@ public class Superstructure extends SubsystemBase {
                         .until(() ->
                                 robotState.getMatchState().getTimeToHubActive().gt(timeToShoot.get())))
                 .withName("Superstructure/Shoot");
+    }
+
+    public Command feed() {
+        return run(() -> applyState(SuperstructureState.TRACKING_NEUTRAL))
+                .until(() -> flywheel.isAtGoal() && hood.isAtGoal() && turret.isAtGoal())
+                .andThen(run(() -> {
+                    if (robotState.getPose().getY() < FieldConstants.blueHubLeftThesholdY
+                            && robotState.getPose().getY() < FieldConstants.blueHubRightThesholdY) {
+                        runState(SuperstructureState.FEEDING);
+                    } else {
+                        runState(SuperstructureState.TRACKING_NEUTRAL);
+                    }
+                }))
+                .withName("Superstructure/Feed");
     }
 
     public Command zero() {

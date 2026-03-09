@@ -40,12 +40,12 @@ public class TurretIOSim extends TurretIOHardware {
             motorSimState.setRotorVelocity(velocity.times(reduction));
             motorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
 
-            encoder1SimState.setRawPosition(position.times(cancoder1Teeth).minus(cancoder1Offset));
-            encoder1SimState.setVelocity(velocity.times(cancoder1Teeth));
+            encoder1SimState.setRawPosition(position.times(cancoder1Reduction).minus(cancoder1Offset));
+            encoder1SimState.setVelocity(velocity.times(cancoder1Reduction));
             encoder1SimState.setSupplyVoltage(RobotController.getBatteryVoltage());
 
-            encoder2SimState.setRawPosition(position.times(cancoder2Teeth).minus(cancoder2Offset));
-            encoder2SimState.setVelocity(velocity.times(cancoder2Teeth));
+            encoder2SimState.setRawPosition(position.times(cancoder2Reduction).minus(cancoder2Offset));
+            encoder2SimState.setVelocity(velocity.times(cancoder2Reduction));
             encoder2SimState.setSupplyVoltage(RobotController.getBatteryVoltage());
         });
     }

@@ -10,14 +10,17 @@ package frc.robot.subsystems.superstructure;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import frc.robot.Constants;
+import frc.robot.FieldConstants;
 import frc.robot.RobotState;
 import frc.robot.subsystems.superstructure.Superstructure.SuperstructureSetpoint;
+import frc.robot.subsystems.superstructure.hood.HoodConstants;
 import frc.robot.subsystems.superstructure.turret.Turret.TurretSetpoint;
 import frc.robot.subsystems.superstructure.turret.TurretConstants;
 import frc.robot.util.PhysicsUtil;
@@ -55,6 +58,17 @@ public class SuperstructureSetpointCalculator {
             Map.entry(5.30, 1.05),
             Map.entry(6.20, 1.10));
 
+    private static final InterpolatingDoubleTreeMap passingFlywheelVelocityMap =
+            InterpolatingDoubleTreeMap.ofEntries(Map.entry(1.0, 100.0), Map.entry(2.0, 200.0));
+
+    private static final double bluePassingPointX = FieldConstants.blueAllianceThreshold - 1.5;
+    private static final double redPassingPointX = FieldConstants.redAllianceThreshold + 1.5;
+
+    private static final double leftPassingZoneMinY = FieldConstants.blueHubLeftThesholdY + 1;
+    private static final double leftPassingZoneMaxY = FieldConstants.blueHubLeftThesholdY + 2;
+    private static final double rightPassingZoneMinY = FieldConstants.blueHubRightThesholdY - 2;
+    private static final double rightPassingZoneMaxY = FieldConstants.blueHubRightThesholdY - 1;
+
     private final RobotState robotState = RobotState.getInstance();
     private final Supplier<ChassisSpeeds> fieldVelocity = robotState::getTargetFieldVelocity;
 
@@ -83,7 +97,7 @@ public class SuperstructureSetpointCalculator {
         var turretDistanceFromHub =
                 adjustedHubTranslation.minus(currentTurretTranslation).getNorm();
 
-        var turretSetpoint = getTurretSetpointForAdjustedHub(adjustedHubTranslation);
+        var turretSetpoint = getTurretSetpointFor(adjustedHubTranslation);
         var flywheelVelocity = flywheelMap.get(turretDistanceFromHub);
         var hoodAngle = hoodMap.get(turretDistanceFromHub);
 
@@ -98,13 +112,37 @@ public class SuperstructureSetpointCalculator {
                 turretSetpoint.velocity());
     }
 
-    private TurretSetpoint getTurretSetpointForAdjustedHub(Translation2d adjustedHubTranslation) {
+    private Pose2d getPassingPose() {
+        var isLeftSide = robotState.getTurretPose().getY() > FieldConstants.fieldWidth.in(Meters) / 2;
+
+        var x = RobotState.isBlue() ? bluePassingPointX : redPassingPointX;
+        if (isLeftSide) {
+            var clampedY = MathUtil.clamp(robotState.getPose().getY(), leftPassingZoneMinY, leftPassingZoneMaxY);
+            return new Pose2d(new Translation2d(x, clampedY), new Rotation2d());
+        } else {
+            var clampedY = MathUtil.clamp(robotState.getPose().getY(), rightPassingZoneMinY, rightPassingZoneMaxY);
+            return new Pose2d(new Translation2d(x, clampedY), new Rotation2d());
+        }
+    }
+
+    public SuperstructureSetpoint getSetpointForPassing() {
+        var passingPose = getPassingPose();
+        var flywheelVelocity = passingFlywheelVelocityMap.get(Math.hypot(passingPose.getX(), passingPose.getY()));
+        var turretSetpointForPassing = getTurretSetpointFor(passingPose.getTranslation());
+        Logger.recordOutput("SuperstructureSetpointCalculator/PassingPose", passingPose);
+        return new SuperstructureSetpoint(
+                RadiansPerSecond.of(flywheelVelocity),
+                HoodConstants.maxAngle,
+                turretSetpointForPassing.position(),
+                turretSetpointForPassing.velocity());
+    }
+
+    private TurretSetpoint getTurretSetpointFor(Translation2d poseTranslation) {
         var robotPoseNextLoop = PhysicsUtil.predictPoseFromFieldSpeeds(
                 robotState.getPose(), fieldVelocity.get(), Constants.mainLoopPeriod);
 
         var currentTurretTranslation = robotState.getTurretPose().toPose2d().getTranslation();
-        var turretHeading =
-                adjustedHubTranslation.minus(currentTurretTranslation).getAngle();
+        var turretHeading = poseTranslation.minus(currentTurretTranslation).getAngle();
         var predictedTargetTurretPosition = turretHeading.minus(robotPoseNextLoop.getRotation());
 
         return new TurretSetpoint(

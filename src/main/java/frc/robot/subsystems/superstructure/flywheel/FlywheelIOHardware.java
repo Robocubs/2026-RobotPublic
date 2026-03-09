@@ -29,12 +29,12 @@ import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.Constants;
 import frc.robot.PhoenixCANBus;
+import frc.robot.util.PhoenixUtil;
 import frc.robot.util.tuning.LoggedTunableNumber;
 import frc.robot.util.tuning.LoggedTunableValue;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.superstructure.flywheel.FlywheelConstants.*;
-import static frc.robot.util.PhoenixUtil.*;
 
 public class FlywheelIOHardware implements FlywheelIO {
     private static final LoggedTunableNumber kS = new LoggedTunableNumber("Flywheel/kS", 0.17591);
@@ -88,9 +88,9 @@ public class FlywheelIOHardware implements FlywheelIO {
                         .withSupplyCurrentLimit(Amps.of(60))
                         .withSupplyCurrentLowerLimit(Amps.of(40)));
 
-        tryUntilOk(() -> leaderMotor.getConfigurator().apply(motorConfig));
-        tryUntilOk(() -> followerMotor.getConfigurator().apply(motorConfig));
-        tryUntilOk(() -> followerMotor.setControl(new Follower(leaderId, MotorAlignmentValue.Aligned)));
+        PhoenixUtil.tryUntilOk(() -> leaderMotor.getConfigurator().apply(motorConfig));
+        PhoenixUtil.tryUntilOk(() -> followerMotor.getConfigurator().apply(motorConfig));
+        PhoenixUtil.tryUntilOk(() -> followerMotor.setControl(new Follower(leaderId, MotorAlignmentValue.Aligned)));
 
         leaderPositionSignal = leaderMotor.getPosition();
         leaderVelocitySignal = leaderMotor.getVelocity();
@@ -155,8 +155,8 @@ public class FlywheelIOHardware implements FlywheelIO {
                     motorConfig.Slot0.kA = kA.get();
                     motorConfig.Slot0.kP = kP.get();
                     motorConfig.Slot0.kD = kD.get();
-                    tryUntilOk(() -> leaderMotor.getConfigurator().apply(motorConfig));
-                    tryUntilOk(() -> followerMotor.getConfigurator().apply(motorConfig));
+                    PhoenixUtil.tryUntilOk(() -> leaderMotor.getConfigurator().apply(motorConfig));
+                    PhoenixUtil.tryUntilOk(() -> followerMotor.getConfigurator().apply(motorConfig));
                 },
                 kS,
                 kV,

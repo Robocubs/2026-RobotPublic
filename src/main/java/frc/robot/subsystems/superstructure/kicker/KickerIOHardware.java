@@ -46,6 +46,7 @@ public class KickerIOHardware implements KickerIO {
     private static final LoggedTunableNumber kD = new LoggedTunableNumber("Kicker/kD", 0.0);
 
     protected final TalonFX motor;
+
     private final TalonFXConfiguration motorConfig;
 
     private final StatusSignalCollection signals = new StatusSignalCollection();

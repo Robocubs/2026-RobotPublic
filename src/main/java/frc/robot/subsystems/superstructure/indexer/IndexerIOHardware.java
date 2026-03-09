@@ -28,12 +28,12 @@ import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.Constants;
 import frc.robot.PhoenixCANBus;
+import frc.robot.util.PhoenixUtil;
 import frc.robot.util.tuning.LoggedTunableNumber;
 import frc.robot.util.tuning.LoggedTunableValue;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.superstructure.indexer.IndexerConstants.*;
-import static frc.robot.util.PhoenixUtil.*;
 
 public class IndexerIOHardware implements IndexerIO {
     private static final LoggedTunableNumber kS = new LoggedTunableNumber("Indexer/kS", 0.15286);
@@ -80,7 +80,7 @@ public class IndexerIOHardware implements IndexerIO {
                                 .withStatorCurrentLimit(Amps.of(120))
                                 .withSupplyCurrentLimit(Amps.of(60))
                                 .withSupplyCurrentLowerLimit(Amps.of(40)));
-        tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
+        PhoenixUtil.tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
 
         positionSignal = motor.getPosition();
         velocitySignal = motor.getVelocity();
@@ -123,7 +123,7 @@ public class IndexerIOHardware implements IndexerIO {
                     motorConfig.Slot0.kA = kA.get();
                     motorConfig.Slot0.kP = kP.get();
                     motorConfig.Slot0.kD = kD.get();
-                    tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
+                    PhoenixUtil.tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
                 },
                 kS,
                 kV,

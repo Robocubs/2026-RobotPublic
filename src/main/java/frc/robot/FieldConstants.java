@@ -35,6 +35,10 @@ public final class FieldConstants {
             fieldLayout.getTagPose(4).get().getX();
     public static final double blueNeutralZoneStart =
             fieldLayout.getTagPose(20).get().getX();
+    public static final double blueHubLeftThesholdY =
+            fieldLayout.getTagPose(21).get().getY();
+    public static final double blueHubRightThesholdY =
+            fieldLayout.getTagPose(18).get().getY();
 
     public static final Pose2d redHubPose = fieldLayout
             .getTagPose(10)

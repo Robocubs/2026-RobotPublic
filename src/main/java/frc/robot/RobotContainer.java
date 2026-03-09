@@ -25,7 +25,6 @@ import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOHardware;
 import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.superstructure.Superstructure;
-import frc.robot.subsystems.superstructure.Superstructure.SuperstructureState;
 import frc.robot.subsystems.superstructure.flywheel.FlywheelIO;
 import frc.robot.subsystems.superstructure.flywheel.FlywheelIOHardware;
 import frc.robot.subsystems.superstructure.flywheel.FlywheelIOSim;
@@ -61,7 +60,7 @@ public class RobotContainer {
     protected final Vision vision;
     protected final Intake intake;
     protected final Superstructure superstructure;
-
+    protected final RobotState robotState = RobotState.getInstance();
     // Controller
     private final CommandXboxController driverController = new CommandXboxController(0);
 
@@ -157,15 +156,15 @@ public class RobotContainer {
                         drive,
                         () -> -driverController.getLeftY(),
                         () -> -driverController.getLeftX(),
-                        () -> RobotState.getInstance().getHeadingTo(FieldConstants.center),
+                        () -> robotState.getHeadingTo(FieldConstants.center),
                         driverController.rightTrigger()));
 
         driverController.rightBumper().onTrue(drive.brake());
 
         driverController
                 .start()
-                .onTrue(runOnce(() -> RobotState.getInstance()
-                                .resetHeading(RobotState.isBlue() ? Rotation2d.kZero : Rotation2d.k180deg))
+                .onTrue(runOnce(() ->
+                                robotState.resetHeading(RobotState.isBlue() ? Rotation2d.kZero : Rotation2d.k180deg))
                         .withName("ResetHeading"));
 
         driverController.y().whileTrue(drive.toPose(() -> FieldConstants.origin, false, false));
@@ -173,7 +172,10 @@ public class RobotContainer {
         driverController.back().onTrue(superstructure.zero());
 
         driverController.rightTrigger().whileTrue(superstructure.shoot());
-        driverController.leftTrigger().whileTrue(superstructure.runState(SuperstructureState.TUNING));
+        driverController
+                .leftTrigger()
+                .and(() -> !robotState.inAllianceZone() && !robotState.onAllianceBump())
+                .whileTrue(superstructure.feed());
 
         driverController.x().onTrue(intake.intake());
 

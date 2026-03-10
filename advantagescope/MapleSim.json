@@ -1,0 +1,298 @@
+{
+  "hubs": [
+    {
+      "x": 0,
+      "y": 33,
+      "width": 979,
+      "height": 583,
+      "state": {
+        "sidebar": {
+          "width": 300,
+          "expanded": [
+            "/RealOutputs/Vision/CameraTurret",
+            "/RealOutputs/Vision/CameraTurret/AcceptedPoses",
+            "/RealOutputs/Vision/CameraTurret/AcceptedPoses/0",
+            "/RealOutputs/Vision/CameraTurret/AcceptedPoses/0/rotation",
+            "/RealOutputs/Vision/CameraTurret/AcceptedPoses/0/translation",
+            "/RealOutputs",
+            "/Tuning",
+            "/RealOutputs/Simulation"
+          ]
+        },
+        "tabs": {
+          "selected": 5,
+          "tabs": [
+            {
+              "type": 0,
+              "title": "",
+              "controller": null,
+              "controllerUUID": "ojtisv9oddccjy3xwll0sbifxgfk6g8o",
+              "renderer": "",
+              "controlsHeight": 0
+            },
+            {
+              "type": 5,
+              "title": "Console",
+              "controller": "/RealOutputs/Console",
+              "controllerUUID": "nn0oi18wkq41rdv2wl1ufzl1gr7tmw5y",
+              "renderer": {
+                "highlight": false
+              },
+              "controlsHeight": 0
+            },
+            {
+              "type": 3,
+              "title": "3D Field",
+              "controller": {
+                "sources": [
+                  {
+                    "type": "robot",
+                    "logKey": "/RealOutputs/Simulation/Pose",
+                    "logType": "Pose2d",
+                    "visible": true,
+                    "options": {
+                      "model": "2026 KitBot"
+                    }
+                  },
+                  {
+                    "type": "vision",
+                    "logKey": "/RealOutputs/Vision/CameraTurret/TargetPoses",
+                    "logType": "Pose3d[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#00ffff",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "ghost",
+                    "logKey": "/RealOutputs/RobotState/Pose",
+                    "logType": "Pose2d",
+                    "visible": true,
+                    "options": {
+                      "model": "2026 KitBot",
+                      "color": "#0000ff"
+                    }
+                  },
+                  {
+                    "type": "vision",
+                    "logKey": "/RealOutputs/Vision/CameraTurret/TargetPoses",
+                    "logType": "Pose3d[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#0000ff",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "gamePiece",
+                    "logKey": "/RealOutputs/Simulation/Fuel",
+                    "logType": "Pose3d[]",
+                    "visible": true,
+                    "options": {
+                      "variant": "Fuel"
+                    }
+                  },
+                  {
+                    "type": "cone",
+                    "logKey": "/RealOutputs/Simulation/TurretPose",
+                    "logType": "Pose3d",
+                    "visible": true,
+                    "options": {
+                      "color": "#00ffff",
+                      "position": "center"
+                    }
+                  },
+                  {
+                    "type": "cone",
+                    "logKey": "/RealOutputs/RobotState/TurretPose",
+                    "logType": "Pose3d",
+                    "visible": true,
+                    "options": {
+                      "color": "#0000ff",
+                      "position": "center"
+                    }
+                  },
+                  {
+                    "type": "cone",
+                    "logKey": "/RealOutputs/SuperstructureSetpointCalculator/PassingPose",
+                    "logType": "Pose2d",
+                    "visible": true,
+                    "options": {
+                      "color": "#ff00ff",
+                      "position": "center"
+                    }
+                  }
+                ],
+                "game": "FRC:2026 Field"
+              },
+              "controllerUUID": "vu4ctra6lm8bptzbc4u5812u6ye5xyl4",
+              "renderer": {
+                "cameraIndex": -1,
+                "orbitFov": 50,
+                "cameraPosition": [
+                  -0.5052603666016131,
+                  5.538580781213218,
+                  6.821103493593183
+                ],
+                "cameraTarget": [
+                  -0.3237699725091329,
+                  1.2958348128803423,
+                  0.8148316537102347
+                ]
+              },
+              "controlsHeight": 345
+            },
+            {
+              "type": 9,
+              "title": "Swerve",
+              "controller": {
+                "sources": [
+                  {
+                    "type": "states",
+                    "logKey": "/Drive/Swerve/0/moduleStates",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#ff0000",
+                      "arrangement": "0,1,2,3"
+                    }
+                  },
+                  {
+                    "type": "states",
+                    "logKey": "/Drive/Swerve/0/targetStates",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#0000ff",
+                      "arrangement": "0,1,2,3"
+                    }
+                  }
+                ],
+                "maxSpeed": 5,
+                "sizeX": 0.65,
+                "sizeY": 0.65,
+                "orientation": 1
+              },
+              "controllerUUID": "faermvzm9vpcsj96pwebia4dlx4oefuk",
+              "renderer": null,
+              "controlsHeight": 200
+            },
+            {
+              "type": 8,
+              "title": "Joysticks",
+              "controller": [
+                "Xbox Controller (White)",
+                "None",
+                "None",
+                "None",
+                "None",
+                "None"
+              ],
+              "controllerUUID": "peyxd07kv5y8fvrac8ub7167aet9pxg2",
+              "renderer": null,
+              "controlsHeight": 85
+            },
+            {
+              "type": 1,
+              "title": "Line Graph",
+              "controller": {
+                "leftSources": [
+                  {
+                    "type": "stepped",
+                    "logKey": "/RealOutputs/Simulation/FuelHeld",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#2b66a2",
+                      "size": "normal"
+                    }
+                  }
+                ],
+                "rightSources": [],
+                "discreteSources": [],
+                "leftLockedRange": null,
+                "rightLockedRange": null,
+                "leftUnitConversion": {
+                  "autoTarget": null,
+                  "preset": null
+                },
+                "rightUnitConversion": {
+                  "autoTarget": null,
+                  "preset": null
+                },
+                "leftFilter": 0,
+                "rightFilter": 0
+              },
+              "controllerUUID": "nwclurutez80co0t71ulx7h78hmkx8wn",
+              "renderer": null,
+              "controlsHeight": 200
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "satellites": [
+    {
+      "x": 980,
+      "y": 33,
+      "width": 532,
+      "height": 872,
+      "state": {
+        "type": 3,
+        "visualizer": {
+          "cameraIndex": -1,
+          "orbitFov": 50,
+          "cameraPosition": [
+            -13.496666046078879,
+            11.517033701418267,
+            0.0007740473485626093
+          ],
+          "cameraTarget": [
+            1.405174405787132,
+            -2.8794009661993987,
+            0.041215488455845786
+          ]
+        }
+      },
+      "uuid": "vu4ctra6lm8bptzbc4u5812u6ye5xyl4"
+    },
+    {
+      "x": 0,
+      "y": 617,
+      "width": 374,
+      "height": 288,
+      "state": {
+        "type": 8,
+        "visualizer": null
+      },
+      "uuid": "peyxd07kv5y8fvrac8ub7167aet9pxg2"
+    },
+    {
+      "x": 375,
+      "y": 617,
+      "width": 256,
+      "height": 288,
+      "state": {
+        "type": 9,
+        "visualizer": null
+      },
+      "uuid": "faermvzm9vpcsj96pwebia4dlx4oefuk"
+    },
+    {
+      "x": 632,
+      "y": 617,
+      "width": 347,
+      "height": 287,
+      "state": {
+        "type": 5,
+        "visualizer": {
+          "highlight": false
+        }
+      },
+      "uuid": "nn0oi18wkq41rdv2wl1ufzl1gr7tmw5y"
+    }
+  ],
+  "version": "26.0.1"
+}

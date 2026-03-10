@@ -1,0 +1,115 @@
+{
+  "Docking": {
+    "Data": []
+  },
+  "MainWindow": {
+    "GLOBAL": {
+      "font": "Proggy Dotted",
+      "fps": "120",
+      "height": "843",
+      "maximized": "0",
+      "style": "0",
+      "userScale": "2",
+      "width": "1280",
+      "xpos": "785",
+      "ypos": "548"
+    }
+  },
+  "Window": {
+    "###/FMSInfo": {
+      "Collapsed": "0",
+      "Pos": "60,60",
+      "Size": "181,167"
+    },
+    "###/SmartDashboard/Auto Chooser": {
+      "Collapsed": "0",
+      "Pos": "111,23",
+      "Size": "254,54"
+    },
+    "###/SmartDashboard/Autonomous": {
+      "Collapsed": "0",
+      "Pos": "114,31",
+      "Size": "254,54"
+    },
+    "###/SmartDashboard/Characterization": {
+      "Collapsed": "0",
+      "Pos": "109,90",
+      "Size": "271,54"
+    },
+    "###/SmartDashboard/Characterization Chooser": {
+      "Collapsed": "0",
+      "Pos": "108,83",
+      "Size": "321,54"
+    },
+    "###/SmartDashboard/Field": {
+      "Collapsed": "0",
+      "Pos": "335,21",
+      "Size": "697,357"
+    },
+    "###/SmartDashboard/Scheduler": {
+      "Collapsed": "0",
+      "Pos": "854,754",
+      "Size": "400,200"
+    },
+    "###/SmartDashboard/Superstructure": {
+      "Collapsed": "0",
+      "Pos": "953,389",
+      "Size": "259,86"
+    },
+    "###/SmartDashboard/ZeroIntake": {
+      "Collapsed": "0",
+      "Pos": "1014,674",
+      "Size": "234,71"
+    },
+    "###FMS": {
+      "Collapsed": "0",
+      "Pos": "2,389",
+      "Size": "175,184"
+    },
+    "###Joysticks": {
+      "Collapsed": "0",
+      "Pos": "28,568",
+      "Size": "796,200"
+    },
+    "###Keyboard 0 Settings": {
+      "Collapsed": "0",
+      "Pos": "78,54",
+      "Size": "300,560"
+    },
+    "###NetworkTables": {
+      "Collapsed": "0",
+      "Pos": "228,392",
+      "Size": "750,185"
+    },
+    "###NetworkTables Info": {
+      "Collapsed": "0",
+      "Pos": "257,587",
+      "Size": "750,145"
+    },
+    "###Other Devices": {
+      "Collapsed": "0",
+      "Pos": "1025,20",
+      "Size": "250,630"
+    },
+    "###System Joysticks": {
+      "Collapsed": "0",
+      "Pos": "157,151",
+      "Size": "192,218"
+    },
+    "###Timing": {
+      "Collapsed": "0",
+      "Pos": "5,150",
+      "Size": "141,196"
+    },
+    "Debug##Default": {
+      "Collapsed": "0",
+      "Pos": "60,60",
+      "Size": "400,400"
+    },
+    "Robot State": {
+      "Collapsed": "0",
+      "Pos": "5,20",
+      "Size": "99,116"
+    }
+  }
+}

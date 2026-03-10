@@ -12,12 +12,13 @@ import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.simulation.SimNotifier;
+import frc.robot.simulation.SimRobotState;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.superstructure.indexer.IndexerConstants.*;
 
 public class IndexerIOSim extends IndexerIOHardware {
-    public IndexerIOSim() {
+    public IndexerIOSim(SimRobotState simRobotState) {
         var gearbox = DCMotor.getKrakenX60Foc(1);
         var plant = LinearSystemId.createDCMotorSystem(gearbox, 0.001, gearReduction);
         var motorSim = new DCMotorSim(plant, gearbox);
@@ -34,6 +35,8 @@ public class IndexerIOSim extends IndexerIOHardware {
             motorSimState.setRawRotorPosition(position.times(gearReduction));
             motorSimState.setRotorVelocity(velocity.times(gearReduction));
             motorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
+
+            simRobotState.setIndexerVelocity(velocity);
         });
     }
 }

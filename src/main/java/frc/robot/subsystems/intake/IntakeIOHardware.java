@@ -34,6 +34,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.Constants;
+import frc.robot.Constants.Mode;
 import frc.robot.PhoenixCANBus;
 import frc.robot.util.PhoenixUtil;
 import frc.robot.util.tuning.LoggedTunableBoolean;
@@ -51,14 +52,16 @@ public class IntakeIOHardware implements IntakeIO {
     private static final LoggedTunableNumber motionMagicMaxAcceleration = new LoggedTunableNumber(
             "Intake/MotionMagicMaxAcceleration",
             maximumLinearVelocity.in(MetersPerSecond) / 0.2 / distancePerRotation.in(Meters) * extensionReduction);
-    private static final LoggedTunableNumber motionMagicKP = new LoggedTunableNumber("Intake/MotionMagicKP", 0.0);
+    private static final LoggedTunableNumber motionMagicKP =
+            new LoggedTunableNumber("Intake/MotionMagicKP", Constants.currentMode == Mode.SIM ? 5.0 : 0.0);
     private static final LoggedTunableNumber motionMagicKD = new LoggedTunableNumber("Intake/MotionMagicKD", 0.0);
 
     private static final LoggedTunableNumber extensionKG = new LoggedTunableNumber("Intake/ExtensionKG", 0.0);
     private static final LoggedTunableNumber extensionKS = new LoggedTunableNumber("Intake/ExtensionKS", 0.0);
     private static final LoggedTunableNumber extensionKV = new LoggedTunableNumber("Intake/ExtensionKV", 0.0);
     private static final LoggedTunableNumber extensionKA = new LoggedTunableNumber("Intake/ExtensionKA", 0.0);
-    private static final LoggedTunableNumber extensionKP = new LoggedTunableNumber("Intake/ExtensionKP", 0.0);
+    private static final LoggedTunableNumber extensionKP =
+            new LoggedTunableNumber("Intake/ExtensionKP", Constants.currentMode == Mode.SIM ? 1.0 : 0.0);
     private static final LoggedTunableNumber extensionKD = new LoggedTunableNumber("Intake/ExtensionKD", 0.0);
 
     protected final TalonFX rollerMotor;

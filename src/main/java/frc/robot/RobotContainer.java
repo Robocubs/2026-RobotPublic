@@ -7,6 +7,8 @@
 
 package frc.robot;
 
+import java.util.Optional;
+
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -16,6 +18,7 @@ import frc.robot.autonomous.AutoRoutines;
 import frc.robot.autonomous.LoggedAutoChooser;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.characterization.DriveCharacterization;
+import frc.robot.simulation.SimRobotState;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveIOHardware;
 import frc.robot.subsystems.drive.DriveIOReplay;
@@ -60,9 +63,13 @@ public class RobotContainer {
     protected final Vision vision;
     protected final Intake intake;
     protected final Superstructure superstructure;
-    protected final RobotState robotState = RobotState.getInstance();
+
     // Controller
     private final CommandXboxController driverController = new CommandXboxController(0);
+
+    // Other
+    private final RobotState robotState = RobotState.getInstance();
+    Optional<SimRobotState> simRobotState = Optional.empty();
 
     public RobotContainer() {
         switch (Constants.currentMode) {
@@ -78,15 +85,18 @@ public class RobotContainer {
                         new KickerIOHardware());
                 break;
             case SIM:
-                drive = new Drive(new DriveIOSim());
-                vision = new Vision(new AprilTagIO[] {new AprilTagIOSim(VisionConstants.frontAprilTagConfig)});
-                intake = new Intake(new IntakeIOSim());
+                var simRobotState = new SimRobotState();
+                this.simRobotState = Optional.of(simRobotState);
+                drive = new Drive(new DriveIOSim(simRobotState));
+                vision = new Vision(
+                        new AprilTagIO[] {new AprilTagIOSim(VisionConstants.frontAprilTagConfig, simRobotState)});
+                intake = new Intake(new IntakeIOSim(simRobotState));
                 superstructure = new Superstructure(
-                        new FlywheelIOSim(),
-                        new HoodIOSim(),
-                        new TurretIOSim(),
-                        new IndexerIOSim(),
-                        new KickerIOSim() {});
+                        new FlywheelIOSim(simRobotState),
+                        new HoodIOSim(simRobotState),
+                        new TurretIOSim(simRobotState),
+                        new IndexerIOSim(simRobotState),
+                        new KickerIOSim(simRobotState) {});
                 break;
             default:
                 drive = new Drive(new DriveIOReplay());

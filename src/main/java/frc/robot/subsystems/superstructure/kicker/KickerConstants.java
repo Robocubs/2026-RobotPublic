@@ -9,14 +9,16 @@ package frc.robot.subsystems.superstructure.kicker;
 
 import edu.wpi.first.units.AngularVelocityUnit;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Distance;
 import frc.robot.util.tuning.LoggedTunableMeasure;
 
-import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.*;
 
 public final class KickerConstants {
     public static final int motorId = 32;
 
     public static final double gearReduction = 4.0;
+    public static final Distance beltRadius = Meters.of(0.735);
 
     public static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> velocityTolerance =
             new LoggedTunableMeasure<>("Kicker/VelocityTolerance", RadiansPerSecond.of(600 * 0.05 / gearReduction));

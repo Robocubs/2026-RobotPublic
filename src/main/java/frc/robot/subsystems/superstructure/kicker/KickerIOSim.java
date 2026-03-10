@@ -12,11 +12,12 @@ import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.simulation.SimNotifier;
+import frc.robot.simulation.SimRobotState;
 
 import static edu.wpi.first.units.Units.*;
 
 public class KickerIOSim extends KickerIOHardware {
-    public KickerIOSim() {
+    public KickerIOSim(SimRobotState simRobotState) {
         var gearbox = DCMotor.getKrakenX60Foc(1);
         var plant = LinearSystemId.createDCMotorSystem(gearbox, 0.001, KickerConstants.gearReduction);
         var motorSim = new DCMotorSim(plant, gearbox);
@@ -33,6 +34,8 @@ public class KickerIOSim extends KickerIOHardware {
             motorSimState.setRawRotorPosition(position.times(KickerConstants.gearReduction));
             motorSimState.setRotorVelocity(velocity.times(KickerConstants.gearReduction));
             motorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
+
+            simRobotState.setKickerVelocity(velocity);
         });
     }
 }

@@ -137,7 +137,7 @@ public class Superstructure extends SubsystemBase {
             }
             case TRACKING_NEUTRAL -> {
                 var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForPassing();
-                flywheel.stop();
+                flywheel.setVelocity(superstructureSetpoint.flywheelVelocity);
                 hood.setAngle(superstructureSetpoint.hoodAngle);
                 turret.setAngle(superstructureSetpoint.turretAngle);
                 indexer.stop();
@@ -221,11 +221,12 @@ public class Superstructure extends SubsystemBase {
         return run(() -> applyState(SuperstructureState.TRACKING_NEUTRAL))
                 .until(() -> flywheel.isAtGoal() && hood.isAtGoal() && turret.isAtGoal())
                 .andThen(run(() -> {
-                    if (robotState.getPose().getY() < FieldConstants.blueHubLeftThesholdY
-                            && robotState.getPose().getY() < FieldConstants.blueHubRightThesholdY) {
-                        runState(SuperstructureState.FEEDING);
+                    var turretPose = robotState.getTurretPose();
+                    if (turretPose.getY() > FieldConstants.blueHubLeftThresholdY
+                            || turretPose.getY() < FieldConstants.blueHubRightThresholdY) {
+                        applyState(SuperstructureState.FEEDING);
                     } else {
-                        runState(SuperstructureState.TRACKING_NEUTRAL);
+                        applyState(SuperstructureState.TRACKING_NEUTRAL);
                     }
                 }))
                 .withName("Superstructure/Feed");

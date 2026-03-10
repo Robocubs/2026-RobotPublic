@@ -14,6 +14,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import frc.robot.simulation.SimNotifier;
+import frc.robot.simulation.SimRobotState;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.superstructure.hood.HoodConstants.*;
@@ -24,7 +25,7 @@ public class HoodIOSim implements HoodIO {
     private Angle currentAngle = minAngle;
     private AngularVelocity currentAngularVelocity = RadiansPerSecond.zero();
 
-    public HoodIOSim() {
+    public HoodIOSim(SimRobotState simRobotState) {
         var gearbox = new DCMotor(
                 6,
                 PoundInches.of(77.90 / 16.0).in(NewtonMeters),
@@ -48,6 +49,8 @@ public class HoodIOSim implements HoodIO {
 
             currentAngle = Radians.of(armSim.getAngleRads());
             currentAngularVelocity = RadiansPerSecond.of(armSim.getVelocityRadPerSec());
+
+            simRobotState.setHoodAngle(currentAngle);
         });
     }
 

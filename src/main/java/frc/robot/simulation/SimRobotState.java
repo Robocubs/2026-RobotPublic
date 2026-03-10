@@ -1,0 +1,227 @@
+// Copyright (c) 2026 FRC Team 1701 Robocubs
+// http://github.com/Robocubs
+//
+// Use of this source code is governed by an MIT-style
+// license that can be found in the LICENSE file at
+// the root directory of this project.
+
+package frc.robot.simulation;
+
+import java.util.Map;
+
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.Timer;
+import frc.robot.Constants;
+import frc.robot.FieldConstants;
+import frc.robot.RobotConstants;
+import frc.robot.RobotState;
+import frc.robot.subsystems.superstructure.flywheel.FlywheelConstants;
+import frc.robot.subsystems.superstructure.indexer.IndexerConstants;
+import frc.robot.subsystems.superstructure.kicker.KickerConstants;
+import frc.robot.subsystems.superstructure.turret.TurretConstants;
+import frc.robot.util.ConcurrentTimeInterpolatableBuffer;
+import frc.robot.util.tuning.LoggedTunableNumber;
+import lombok.Setter;
+import org.ironmaple.simulation.IntakeSimulation;
+import org.ironmaple.simulation.IntakeSimulation.IntakeSide;
+import org.ironmaple.simulation.SimulatedArena;
+import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
+import org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt;
+import org.ironmaple.simulation.seasonspecific.rebuilt2026.RebuiltFuelOnField;
+import org.ironmaple.simulation.seasonspecific.rebuilt2026.RebuiltFuelOnFly;
+import org.littletonrobotics.junction.Logger;
+
+import static edu.wpi.first.units.Units.*;
+import static frc.robot.subsystems.superstructure.flywheel.FlywheelConstants.flywheelRadius;
+
+public class SimRobotState {
+    private static LoggedTunableNumber maxBallsPerSecond = new LoggedTunableNumber("Simulation/MaxBallsPerSecond", 8.0);
+
+    public static final Time simLoopPeriod = Seconds.of(0.004);
+    public static final Pose2d initialPose = new Pose2d(FieldConstants.center.getX(), 1.0, Rotation2d.kCCW_90deg);
+
+    private static final double fuelDiameterMeters = 0.15;
+    private static final AngularVelocity minIndexerVelocityToShoot = RotationsPerSecond.of(0.1);
+    private static final AngularVelocity minKickerVelocityToShoot = RotationsPerSecond.of(0.1);
+
+    private static final InterpolatingDoubleTreeMap flywheelEfficiency =
+            InterpolatingDoubleTreeMap.ofEntries(Map.entry(2.0, 0.85), Map.entry(3.75, 1.0), Map.entry(6.0, 1.0));
+
+    private final ConcurrentTimeInterpolatableBuffer<Pose2d> poseBuffer =
+            ConcurrentTimeInterpolatableBuffer.createBuffer(RobotState.lookbackTimeSeconds);
+
+    private boolean hasInit = false;
+    private Notifier simNotifier;
+    private SwerveDriveSimulation swerveDriveSim;
+    private IntakeSimulation intakeSim;
+
+    private @Setter Angle turretAngle = Radians.zero();
+    private @Setter Angle hoodAngle = Radians.zero();
+    private @Setter AngularVelocity flywheelVelocity = RadiansPerSecond.zero();
+    private @Setter AngularVelocity kickerVelocity = RadiansPerSecond.zero();
+    private @Setter AngularVelocity indexerVelocity = RadiansPerSecond.zero();
+
+    private double lastShotOrIdleTimestamp = 0.0;
+
+    public SimRobotState() {
+        poseBuffer.addSample(Timer.getFPGATimestamp(), Pose2d.kZero);
+
+        if (Constants.mapleSimEnabled) {
+            SimulatedArena.overrideInstance(new Arena2026Rebuilt(false));
+            SimulatedArena.overrideSimulationTimings(simLoopPeriod, 1);
+
+            for (var i = 0; i < 12; i++) {
+                var xOffset = (-5.5 + i) * fuelDiameterMeters;
+                for (var j = 0; j < 15; j++) {
+                    var yOffset = -Units.inchesToMeters(90.95) + (j + 0.5) * fuelDiameterMeters;
+                    var translation = FieldConstants.center.plus(new Translation2d(xOffset, yOffset));
+                    SimulatedArena.getInstance().addGamePiece(new RebuiltFuelOnField(translation));
+                }
+                for (var j = 0; j < 15; j++) {
+                    var yOffset = Units.inchesToMeters(90.95) - (j + 0.5) * fuelDiameterMeters;
+                    var translation = FieldConstants.center.plus(new Translation2d(xOffset, yOffset));
+                    SimulatedArena.getInstance().addGamePiece(new RebuiltFuelOnField(translation));
+                }
+            }
+        }
+    }
+
+    public synchronized void init(MapleSimSwerveDrivetrain drivetrainSim) {
+        if (hasInit || !Constants.mapleSimEnabled) {
+            return;
+        }
+
+        hasInit = true;
+
+        swerveDriveSim = drivetrainSim.mapleSimDrive;
+
+        intakeSim = IntakeSimulation.OverTheBumperIntake(
+                "Fuel",
+                drivetrainSim.mapleSimDrive,
+                RobotConstants.intakeWidth,
+                RobotConstants.robotCenterToIntakeExtended.minus(RobotConstants.robotCenterToBackBumper),
+                IntakeSide.BACK,
+                RobotConstants.maxCapacity);
+
+        resetPose(new Pose2d(FieldConstants.center.getX(), 1.0, Rotation2d.kCCW_90deg));
+
+        simNotifier = new Notifier(() -> {
+            try {
+                SimulatedArena.getInstance().simulationPeriodic();
+                drivetrainSim.update();
+                addPoseMeasurement(Timer.getFPGATimestamp(), drivetrainSim.mapleSimDrive.getSimulatedDriveTrainPose());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        simNotifier.startPeriodic(simLoopPeriod);
+    }
+
+    public void update() {
+        var timestamp = Timer.getFPGATimestamp();
+        var isShooting = kickerVelocity.gt(minKickerVelocityToShoot) && indexerVelocity.gt(minIndexerVelocityToShoot);
+        var vBallInIndexer = indexerVelocity.in(RadiansPerSecond) * IndexerConstants.wheelRadius.in(Meters) / 2.0;
+        var vBallInKicker =
+                kickerVelocity.in(RadiansPerSecond) * KickerConstants.beltRadius.in(Meters) / 2.0; // accounts for ramp
+        var secondsPerBall =
+                Math.max(fuelDiameterMeters / Math.min(vBallInIndexer, vBallInKicker), 1.0 / maxBallsPerSecond.get());
+        if (isShooting
+                && timestamp - lastShotOrIdleTimestamp > secondsPerBall
+                && intakeSim.obtainGamePieceFromIntake()) {
+            SimulatedArena.getInstance()
+                    .addGamePieceProjectile(new RebuiltFuelOnFly(
+                            swerveDriveSim
+                                    .getSimulatedDriveTrainPose()
+                                    .transformBy(TurretConstants.robotToTurret2d)
+                                    .getTranslation(),
+                            Translation2d.kZero, // Math is wrong, so just use turret pose for robot pose
+                            swerveDriveSim.getDriveTrainSimulatedChassisSpeedsFieldRelative(),
+                            swerveDriveSim
+                                    .getSimulatedDriveTrainPose()
+                                    .getRotation()
+                                    .plus(new Rotation2d(turretAngle)),
+                            TurretConstants.robotToTurret
+                                    .getMeasureZ()
+                                    .plus(FlywheelConstants.turretToFlywheel.getMeasureZ())
+                                    .plus(flywheelRadius
+                                            .plus(Meters.of(fuelDiameterMeters / 2.0))
+                                            .times(Math.cos(hoodAngle.in(Radians)))),
+                            MetersPerSecond.of(
+                                    (FlywheelConstants.flywheelRadius.in(Meters) * FlywheelConstants.gearReduction
+                                                    + FlywheelConstants.rollerRadius.in(Meters)
+                                                            * FlywheelConstants.rollerReduction)
+                                            * flywheelVelocity.in(RadiansPerSecond)
+                                            * 0.5
+                                            * flywheelEfficiency.get(RobotState.getInstance()
+                                                    .getDistanceToHub(swerveDriveSim
+                                                            .getSimulatedDriveTrainPose()
+                                                            .transformBy(TurretConstants.robotToTurret2d))
+                                                    .in(Meters))),
+                            Degrees.of(90).minus(hoodAngle)));
+            lastShotOrIdleTimestamp = timestamp;
+        } else if (!isShooting) {
+            lastShotOrIdleTimestamp = timestamp;
+        }
+
+        var turretCenterPose =
+                new Pose3d(swerveDriveSim.getSimulatedDriveTrainPose()).transformBy(TurretConstants.robotToTurret);
+        var turretPose = new Pose3d(
+                turretCenterPose.getTranslation(),
+                turretCenterPose.getRotation().plus(new Rotation3d(0, 0, turretAngle.in(Radians))));
+
+        Logger.recordOutput("Simulation/Pose", swerveDriveSim.getSimulatedDriveTrainPose());
+        Logger.recordOutput("Simulation/TurretPose", turretPose);
+        Logger.recordOutput("Simulation/Fuel", SimulatedArena.getInstance().getGamePiecesArrayByType("Fuel"));
+        Logger.recordOutput("Simulation/FuelHeld", intakeSim.getGamePiecesAmount());
+    }
+
+    public void addPoseMeasurement(double timestamp, Pose2d pose) {
+        poseBuffer.addSample(timestamp, pose);
+    }
+
+    public Pose2d getPose() {
+        return poseBuffer.getSample(Timer.getFPGATimestamp()).orElse(Pose2d.kZero);
+    }
+
+    public Pose2d getPoseAt(double timestamp) {
+        return poseBuffer.getSample(timestamp).orElse(Pose2d.kZero);
+    }
+
+    public void resetPose(Pose2d pose) {
+        if (swerveDriveSim != null) {
+            swerveDriveSim.setSimulationWorldPose(pose);
+        }
+
+        poseBuffer.clear();
+        poseBuffer.addSample(Timer.getFPGATimestamp(), pose);
+    }
+
+    public void resetRotation(Rotation2d rotation) {
+        if (swerveDriveSim != null) {
+            var pose = swerveDriveSim.getSimulatedDriveTrainPose();
+            resetPose(new Pose2d(pose.getTranslation(), rotation));
+        }
+    }
+
+    public void updateIntakeSim(boolean isExtendedAndRunning) {
+        if (intakeSim == null) {
+            return;
+        }
+
+        if (isExtendedAndRunning) {
+            intakeSim.startIntake();
+        } else {
+            intakeSim.stopIntake();
+        }
+    }
+}

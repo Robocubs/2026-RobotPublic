@@ -64,7 +64,9 @@
     "edu.wpi.first.math.**.proto.*",
     "edu.wpi.first.math.**.struct.*",
     "edu.wpi.first.wpilibj.RobotState",
-    "com.google.flatbuffers.*"
+    "com.google.flatbuffers.*",
+    "org.dyn4j.dynamics.*",
+    "org.dyn4j.geometry.*"
   ],
   "java.dependency.enableDependencyCheckup": false,
   "editor.defaultFormatter": "richardwillis.vscode-spotless-gradle",
@@ -87,26 +89,27 @@
       }
     }
   },
-  "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx4G -Xms100m -Xlog:disable",
+  "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx8G -Xms100m -Xlog:disable",
   "cSpell.words": [
+    "apriltag",
     "cancoder",
+    "canivore",
     "choreo",
     "CTRE",
     "Daqs",
     "deadband",
+    "debouncer",
     "Feedforward",
+    "Intaking",
     "Interpolatable",
     "lookback",
     "Quasistatic",
+    "reproj",
+    "reprojection",
     "Robocubs",
     "smartdashboard",
-    "wpilibj",
-    "debouncer",
-    "apriltag",
-    "reprojection",
-    "reproj",
     "teleop",
-    "wpilog",
-    "canivore"
+    "wpilibj",
+    "wpilog"
   ]
 }

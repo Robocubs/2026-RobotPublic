@@ -12,15 +12,15 @@ import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import frc.robot.simulation.SimNotifier;
+import frc.robot.simulation.SimRobotState;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.superstructure.flywheel.FlywheelConstants.*;
 
 public class FlywheelIOSim extends FlywheelIOHardware {
-    public FlywheelIOSim() {
+    public FlywheelIOSim(SimRobotState simRobotState) {
         var gearbox = DCMotor.getKrakenX60Foc(2);
-        var plant = LinearSystemId.createFlywheelSystem(
-                gearbox, moiKgMetersSquared.in(KilogramSquareMeters), gearReduction);
+        var plant = LinearSystemId.createFlywheelSystem(gearbox, moi.in(KilogramSquareMeters), gearReduction);
         var motorSim = new FlywheelSim(plant, gearbox);
 
         var leaderSimState = leaderMotor.getSimState();
@@ -30,15 +30,17 @@ public class FlywheelIOSim extends FlywheelIOHardware {
             motorSim.setInputVoltage(leaderSimState.getMotorVoltage());
             motorSim.update(deltaTime.in(Seconds));
 
-            var velocity = motorSim.getAngularVelocity().times(gearReduction);
+            var velocity = motorSim.getAngularVelocity();
 
-            leaderSimState.addRotorPosition(velocity.times(deltaTime));
-            leaderSimState.setRotorVelocity(velocity);
+            leaderSimState.addRotorPosition(velocity.times(gearReduction).times(deltaTime));
+            leaderSimState.setRotorVelocity(velocity.times(gearReduction));
             leaderSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
 
-            followerSimState.addRotorPosition(velocity.times(deltaTime));
-            followerSimState.setRotorVelocity(velocity);
+            followerSimState.addRotorPosition(velocity.times(gearReduction).times(deltaTime));
+            followerSimState.setRotorVelocity(velocity.times(gearReduction));
             followerSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
+
+            simRobotState.setFlywheelVelocity(velocity);
         });
     }
 }

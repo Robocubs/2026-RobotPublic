@@ -8,19 +8,31 @@
 package frc.robot.subsystems.intake;
 
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.ElevatorSim;
+import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import frc.robot.simulation.SimNotifier;
-import org.littletonrobotics.junction.Logger;
+import frc.robot.simulation.SimRobotState;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.intake.IntakeConstants.*;
 
 public class IntakeIOSim extends IntakeIOHardware {
-    public IntakeIOSim() {
+    private static final AngularVelocity minIntakingVelocity = RotationsPerSecond.of(1);
+    private static final Distance minIntakingExtension = maximumExtension.minus(Inches.of(0.5));
+
+    public IntakeIOSim(SimRobotState simRobotState) {
+        var rollerGearbox = DCMotor.getKrakenX60(1);
+        var rollerPlant = LinearSystemId.createFlywheelSystem(rollerGearbox, 0.0001, rollerReduction);
+        var rollerMotorSim = new FlywheelSim(rollerPlant, rollerGearbox);
+        var rollerMotorSimState = rollerMotor.getSimState();
+
         var initialPosition = retractedPosition;
-        var motorSim = new ElevatorSim(
-                DCMotor.getKrakenX44Foc(numExtensionMotors),
+        var extensionMotorSim = new ElevatorSim(
+                DCMotor.getMinion(numExtensionMotors),
                 extensionReduction,
                 mass.in(Kilograms),
                 distancePerRotation.in(Meters) / (2 * Math.PI),
@@ -28,25 +40,35 @@ public class IntakeIOSim extends IntakeIOHardware {
                 maximumExtension.in(Meters),
                 false,
                 initialPosition.in(Meters));
-
-        var motorSimState = extensionMotor.getSimState();
-        motorSimState.setRawRotorPosition(
+        var extensionMotorSimState = extensionMotor.getSimState();
+        extensionMotorSimState.setRawRotorPosition(
                 Rotations.of(initialPosition.in(Meters) / distancePerRotation.in(Meters) * extensionReduction));
 
         SimNotifier.register(deltaTime -> {
-            motorSim.setInputVoltage(motorSimState.getMotorVoltage());
-            motorSim.update(deltaTime.in(Seconds));
+            rollerMotorSim.setInputVoltage(rollerMotorSimState.getMotorVoltage());
+            rollerMotorSim.update(deltaTime.in(Seconds));
 
-            var position = Rotations.of(motorSim.getPositionMeters() / distancePerRotation.in(Meters));
-            var velocity =
-                    RotationsPerSecond.of(motorSim.getVelocityMetersPerSecond() / distancePerRotation.in(Meters));
+            var rollerVelocity = rollerMotorSim.getAngularVelocity().times(rollerReduction);
 
-            Logger.recordOutput("Intake/SimExtensionPosition", position);
-            Logger.recordOutput("Intake/SimExtensionVelocity", velocity);
+            rollerMotorSimState.addRotorPosition(rollerVelocity.times(deltaTime));
+            rollerMotorSimState.setRotorVelocity(rollerVelocity);
+            rollerMotorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
 
-            motorSimState.setRawRotorPosition(position.times(extensionReduction));
-            motorSimState.setRotorVelocity(velocity.times(extensionReduction));
-            motorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
+            extensionMotorSim.setInputVoltage(extensionMotorSimState.getMotorVoltage());
+            extensionMotorSim.update(deltaTime.in(Seconds));
+
+            var extensionPosition =
+                    Rotations.of(extensionMotorSim.getPositionMeters() / distancePerRotation.in(Meters));
+            var extensionVelocity = RotationsPerSecond.of(
+                    extensionMotorSim.getVelocityMetersPerSecond() / distancePerRotation.in(Meters));
+
+            extensionMotorSimState.setRawRotorPosition(extensionPosition.times(extensionReduction));
+            extensionMotorSimState.setRotorVelocity(extensionVelocity.times(extensionReduction));
+            extensionMotorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
+
+            simRobotState.updateIntakeSim(
+                    Meters.of(extensionMotorSim.getPositionMeters()).gt(minIntakingExtension)
+                            && rollerVelocity.gt(minIntakingVelocity));
         });
     }
 }

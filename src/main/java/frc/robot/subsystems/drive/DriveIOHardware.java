@@ -21,6 +21,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
+import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -59,6 +60,8 @@ public class DriveIOHardware implements DriveIO {
             StatusSignal<Temperature> steerTemperature) {}
 
     public DriveIOHardware() {
+        regulateModuleConstants(moduleConstants);
+
         swerveDrivetrain =
                 new TunerSwerveDrivetrain(drivetrainConstants, 250, odometryStdDevs, visionStdDevs, moduleConstants);
         swerveDrivetrain.registerTelemetry(this::addTelemetry);
@@ -101,6 +104,8 @@ public class DriveIOHardware implements DriveIO {
         backLeftModuleSignals = createModuleSignals.apply(2);
         backRightModuleSignals = createModuleSignals.apply(3);
     }
+
+    protected void regulateModuleConstants(SwerveModuleConstants<?, ?, ?>[] constants) {}
 
     @Override
     public void updateInputs(

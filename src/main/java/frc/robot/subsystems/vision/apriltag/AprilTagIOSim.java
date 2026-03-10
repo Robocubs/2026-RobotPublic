@@ -10,7 +10,7 @@ package frc.robot.subsystems.vision.apriltag;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.FieldConstants;
-import frc.robot.RobotState;
+import frc.robot.simulation.SimRobotState;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
@@ -19,10 +19,12 @@ public class AprilTagIOSim extends AprilTagIOHardware {
     public static VisionSystemSim visionSim;
 
     private final PhotonCameraSim cameraSim;
-    private final RobotState robotState = RobotState.getInstance();
+    private final SimRobotState simRobotState;
 
-    public AprilTagIOSim(AprilTagConfig config) {
+    public AprilTagIOSim(AprilTagConfig config, SimRobotState simRobotState) {
         super(config);
+
+        this.simRobotState = simRobotState;
 
         if (visionSim == null) {
             visionSim = new VisionSystemSim("main");
@@ -36,7 +38,7 @@ public class AprilTagIOSim extends AprilTagIOHardware {
 
     @Override
     public void updateInputs(AprilTagIOInputs inputs) {
-        visionSim.update(robotState.getPose());
+        visionSim.update(simRobotState.getPose());
         visionSim.adjustCamera(cameraSim, config.robotToCamera.apply(Timer.getTimestamp()));
 
         super.updateInputs(inputs);

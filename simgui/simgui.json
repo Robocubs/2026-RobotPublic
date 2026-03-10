@@ -1,0 +1,73 @@
+{
+  "NTProvider": {
+    "types": {
+      "/AdvantageKit/RealOutputs/Alerts": "Alerts",
+      "/AdvantageKit/RealOutputs/Choreo Alerts": "Alerts",
+      "/AdvantageKit/RealOutputs/PhotonAlerts": "Alerts",
+      "/FMSInfo": "FMSInfo",
+      "/SmartDashboard/Alerts": "Alerts",
+      "/SmartDashboard/Auto Chooser": "String Chooser",
+      "/SmartDashboard/AutoWinnerOverride": "String Chooser",
+      "/SmartDashboard/Autonomous": "String Chooser",
+      "/SmartDashboard/Characterization": "String Chooser",
+      "/SmartDashboard/Characterization Chooser": "String Chooser",
+      "/SmartDashboard/Choreo Alerts": "Alerts",
+      "/SmartDashboard/Drive": "Subsystem",
+      "/SmartDashboard/Field": "Field2d",
+      "/SmartDashboard/Intake": "Subsystem",
+      "/SmartDashboard/PhotonAlerts": "Alerts",
+      "/SmartDashboard/Scheduler": "Scheduler",
+      "/SmartDashboard/Superstructure": "Subsystem",
+      "/SmartDashboard/VisionSystemSim-main/Sim Field": "Field2d",
+      "/SmartDashboard/ZeroIntake": "Command"
+    },
+    "windows": {
+      "/SmartDashboard/Autonomous": {
+        "window": {
+          "visible": true
+        }
+      },
+      "/SmartDashboard/Characterization": {
+        "window": {
+          "visible": true
+        }
+      },
+      "/SmartDashboard/Field": {
+        "Path": {
+          "arrows": false,
+          "selectable": false,
+          "style": "Line"
+        },
+        "bottom": 1914,
+        "height": 8.069275856018066,
+        "left": 245,
+        "right": 3942,
+        "top": 118,
+        "width": 16.54119300842285,
+        "window": {
+          "visible": true
+        }
+      },
+      "/SmartDashboard/ZeroIntake": {
+        "window": {
+          "visible": true
+        }
+      }
+    }
+  },
+  "NetworkTables": {
+    "retained": {
+      "SmartDashboard": {
+        "open": true
+      }
+    },
+    "transitory": {
+      "SmartDashboard": {
+        "open": true
+      }
+    }
+  },
+  "NetworkTables Info": {
+    "visible": true
+  }
+}

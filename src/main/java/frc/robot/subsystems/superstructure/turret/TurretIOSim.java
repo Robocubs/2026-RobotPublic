@@ -10,18 +10,22 @@ package frc.robot.subsystems.superstructure.turret;
 import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.simulation.SimNotifier;
+import frc.robot.simulation.SimRobotState;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.superstructure.turret.TurretConstants.*;
 
 public class TurretIOSim extends TurretIOHardware {
-    public TurretIOSim() {
+    DCMotorSim motorSim;
+
+    public TurretIOSim(SimRobotState simRobotState) {
         var gearbox = DCMotor.getKrakenX44Foc(1);
         var plant = LinearSystemId.createDCMotorSystem(gearbox, moi.in(KilogramSquareMeters), reduction);
-        var motorSim = new DCMotorSim(plant, gearbox);
+        motorSim = new DCMotorSim(plant, gearbox);
 
         var motorSimState = motor.getSimState();
         motorSimState.setMotorType(MotorType.KrakenX44);
@@ -47,6 +51,14 @@ public class TurretIOSim extends TurretIOHardware {
             encoder2SimState.setRawPosition(position.times(cancoder2Reduction).minus(cancoder2Offset));
             encoder2SimState.setVelocity(velocity.times(cancoder2Reduction));
             encoder2SimState.setSupplyVoltage(RobotController.getBatteryVoltage());
+
+            simRobotState.setTurretAngle(position);
         });
+    }
+
+    @Override
+    public void resetPosition(Angle angle) {
+        motorSim.setAngle(angle.in(Radians));
+        super.resetPosition(angle);
     }
 }

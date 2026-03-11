@@ -153,7 +153,7 @@ public class RobotContainer {
                 () -> -driverController.getLeftY(),
                 () -> -driverController.getLeftX(),
                 () -> -driverController.getRightX(),
-                driverController.rightTrigger()));
+                driverController.rightTrigger().or(driverController.leftTrigger())));
 
         intake.setDefaultCommand(intake.stop());
 

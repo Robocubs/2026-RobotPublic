@@ -109,8 +109,9 @@ test {
 // The sim GUI is *disabled* by default to support running
 // AdvantageKit log replay, which requires that all HAL
 // sim extensions be disabled.
-wpi.sim.addGui().defaultEnabled = false
-wpi.sim.addDriverstation()
+ext.headless = project.hasProperty('headless') ? false : true
+wpi.sim.addGui().defaultEnabled = headless
+// wpi.sim.addDriverstation()
 
 // Setting up my Jar File. In this case, adding all libraries into the main jar ('fat jar')
 // in order to make them all available at runtime. Also adding the manifest so WPILib

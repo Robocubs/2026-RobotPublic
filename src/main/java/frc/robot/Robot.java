@@ -27,7 +27,6 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
  * project.
  */
 public class Robot extends LoggedRobot {
-    @SuppressWarnings("unused")
     private final RobotContainer robotContainer;
 
     public Robot() {
@@ -100,7 +99,11 @@ public class Robot extends LoggedRobot {
 
     /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
     @Override
-    public void autonomousInit() {}
+    public void autonomousInit() {
+        if (isSimulation()) {
+            robotContainer.simRobotState.ifPresent(SimRobotState::reset);
+        }
+    }
 
     /** This function is called periodically during autonomous. */
     @Override

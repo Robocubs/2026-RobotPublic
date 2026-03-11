@@ -15,7 +15,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Time;
@@ -30,14 +29,14 @@ import frc.robot.subsystems.superstructure.indexer.IndexerConstants;
 import frc.robot.subsystems.superstructure.kicker.KickerConstants;
 import frc.robot.subsystems.superstructure.turret.TurretConstants;
 import frc.robot.util.ConcurrentTimeInterpolatableBuffer;
+import frc.robot.util.tuning.LoggedTunableBoolean;
 import frc.robot.util.tuning.LoggedTunableNumber;
+import frc.robot.util.tuning.LoggedTunableValue;
 import lombok.Setter;
 import org.ironmaple.simulation.IntakeSimulation;
 import org.ironmaple.simulation.IntakeSimulation.IntakeSide;
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
-import org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt;
-import org.ironmaple.simulation.seasonspecific.rebuilt2026.RebuiltFuelOnField;
 import org.ironmaple.simulation.seasonspecific.rebuilt2026.RebuiltFuelOnFly;
 import org.littletonrobotics.junction.Logger;
 
@@ -45,6 +44,8 @@ import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.superstructure.flywheel.FlywheelConstants.flywheelRadius;
 
 public class SimRobotState {
+    private static LoggedTunableBoolean useEfficiencyMode =
+            new LoggedTunableBoolean("Simulation/UseEfficiencyMode", false);
     private static LoggedTunableNumber maxBallsPerSecond = new LoggedTunableNumber("Simulation/MaxBallsPerSecond", 8.0);
 
     public static final Time simLoopPeriod = Seconds.of(0.004);
@@ -62,6 +63,7 @@ public class SimRobotState {
 
     private boolean hasInit = false;
     private Notifier simNotifier;
+    private MapleSimArena arena;
     private SwerveDriveSimulation swerveDriveSim;
     private IntakeSimulation intakeSim;
 
@@ -77,22 +79,12 @@ public class SimRobotState {
         poseBuffer.addSample(Timer.getFPGATimestamp(), Pose2d.kZero);
 
         if (Constants.mapleSimEnabled) {
-            SimulatedArena.overrideInstance(new Arena2026Rebuilt(false));
-            SimulatedArena.overrideSimulationTimings(simLoopPeriod, 1);
+            arena = new MapleSimArena();
+            arena.setEfficiencyMode(useEfficiencyMode.get());
+            arena.resetFieldForAuto();
 
-            for (var i = 0; i < 12; i++) {
-                var xOffset = (-5.5 + i) * fuelDiameterMeters;
-                for (var j = 0; j < 15; j++) {
-                    var yOffset = -Units.inchesToMeters(90.95) + (j + 0.5) * fuelDiameterMeters;
-                    var translation = FieldConstants.center.plus(new Translation2d(xOffset, yOffset));
-                    SimulatedArena.getInstance().addGamePiece(new RebuiltFuelOnField(translation));
-                }
-                for (var j = 0; j < 15; j++) {
-                    var yOffset = Units.inchesToMeters(90.95) - (j + 0.5) * fuelDiameterMeters;
-                    var translation = FieldConstants.center.plus(new Translation2d(xOffset, yOffset));
-                    SimulatedArena.getInstance().addGamePiece(new RebuiltFuelOnField(translation));
-                }
-            }
+            SimulatedArena.overrideInstance(arena);
+            SimulatedArena.overrideSimulationTimings(simLoopPeriod, 1);
         }
     }
 
@@ -112,6 +104,7 @@ public class SimRobotState {
                 RobotConstants.robotCenterToIntakeExtended.minus(RobotConstants.robotCenterToBackBumper),
                 IntakeSide.BACK,
                 RobotConstants.maxCapacity);
+        intakeSim.setGamePiecesCount(8);
 
         resetPose(new Pose2d(FieldConstants.center.getX(), 1.0, Rotation2d.kCCW_90deg));
 
@@ -127,7 +120,21 @@ public class SimRobotState {
         simNotifier.startPeriodic(simLoopPeriod);
     }
 
+    public void reset() {
+        if (hasInit) {
+            arena.setEfficiencyMode(useEfficiencyMode.get());
+            arena.resetFieldForAuto();
+            intakeSim.setGamePiecesCount(8);
+        }
+    }
+
     public void update() {
+        if (!hasInit) {
+            return;
+        }
+
+        LoggedTunableValue.ifChanged(0, this::reset, useEfficiencyMode);
+
         var timestamp = Timer.getFPGATimestamp();
         var isShooting = kickerVelocity.gt(minKickerVelocityToShoot) && indexerVelocity.gt(minIndexerVelocityToShoot);
         var vBallInIndexer = indexerVelocity.in(RadiansPerSecond) * IndexerConstants.wheelRadius.in(Meters) / 2.0;

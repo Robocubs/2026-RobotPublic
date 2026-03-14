@@ -46,7 +46,7 @@ public class Intake extends SubsystemBase {
     public Command intake() {
         return this.run(() -> {
                     io.setExtensionPosition(IntakeConstants.extendedPosition);
-                    io.setRollerOutput(1);
+                    io.setRollerOutput(.95);
                 })
                 .withName("Intake/Intake");
     }
@@ -54,7 +54,7 @@ public class Intake extends SubsystemBase {
     public Command reverse() {
         return this.run(() -> {
                     io.setExtensionPosition(IntakeConstants.extendedPosition);
-                    io.setRollerOutput(-1);
+                    io.setRollerOutput(-.95);
                 })
                 .withName("Intake/Reverse");
     }
@@ -70,7 +70,7 @@ public class Intake extends SubsystemBase {
     public Command agitate() {
         return this.run(() -> {
                     io.setExtensionPosition(IntakeConstants.retractedPosition);
-                    io.setRollerOutput(1);
+                    io.setRollerOutput(.95);
                 })
                 .withName("Intake/Agitate");
     }

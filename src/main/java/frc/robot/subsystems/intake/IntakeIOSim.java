@@ -28,7 +28,7 @@ public class IntakeIOSim extends IntakeIOHardware {
         var rollerGearbox = DCMotor.getKrakenX60(1);
         var rollerPlant = LinearSystemId.createFlywheelSystem(rollerGearbox, 0.0001, rollerReduction);
         var rollerMotorSim = new FlywheelSim(rollerPlant, rollerGearbox);
-        var rollerMotorSimState = rollerMotor.getSimState();
+        var rollerMotorSimState = leaderMotor.getSimState();
 
         var initialPosition = retractedPosition;
         var extensionMotorSim = new ElevatorSim(

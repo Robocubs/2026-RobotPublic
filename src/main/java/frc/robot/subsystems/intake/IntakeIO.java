@@ -21,12 +21,19 @@ import static edu.wpi.first.units.Units.*;
 public interface IntakeIO {
     @AutoLog
     public class IntakeInputs {
-        public Angle rollerPosition = Radians.zero();
-        public AngularVelocity rollerVelocity = RadiansPerSecond.zero();
-        public Voltage rollerVoltage = Volts.zero();
-        public Current rollerStatorCurrent = Amps.zero();
-        public Current rollerSupplyCurrent = Amps.zero();
-        public double rollerTemperature = 0.0;
+        public Angle leaderPosition = Radians.zero();
+        public AngularVelocity leaderVelocity = RadiansPerSecond.zero();
+        public Voltage leaderVoltage = Volts.zero();
+        public Current leaderStatorCurrent = Amps.zero();
+        public Current leaderSupplyCurrent = Amps.zero();
+        public double leaderTemperature = 0.0;
+
+        public Angle followerPosition = Radians.zero();
+        public AngularVelocity followerVelocity = RadiansPerSecond.zero();
+        public Voltage followerVoltage = Volts.zero();
+        public Current followerStatorCurrent = Amps.zero();
+        public Current followerSupplyCurrent = Amps.zero();
+        public double followerTemperature = 0.0;
 
         public Distance extensionPosition = Meters.zero();
         public LinearVelocity extensionVelocity = MetersPerSecond.zero();

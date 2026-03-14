@@ -38,21 +38,21 @@ public final class TurretConstants {
             (double) commonGearTeeth / (double) cancoder1Teeth * commonGearReduction;
     public static final double cancoder2Reduction =
             (double) commonGearTeeth / (double) cancoder2Teeth * commonGearReduction;
-    public static final Angle cancoder1Offset = Radians.of(3.059);
-    public static final Angle cancoder2Offset = Radians.of(-1.131);
+    public static final Angle cancoder1Offset = Radians.of(3.299);
+    public static final Angle cancoder2Offset = Radians.of(2.382);
     public static final Angle crtMatchTolerance = Radians.of(0.1);
     public static final boolean encoder1Inverted = true;
     public static final boolean encoder2Inverted = true;
 
-    public static final Angle crtMinAngle = Rotations.of(-1);
-    public static final Angle crtMaxAngle = Rotations.of(1);
-    public static final Angle minAngle = Degrees.of(-200);
-    public static final Angle maxAngle = Degrees.of(200);
+    public static final Angle crtMinAngle = Rotations.of(-0.5);
+    public static final Angle crtMaxAngle = Rotations.of(1.5);
+    public static final Angle minAngle = Degrees.of(-45);
+    public static final Angle maxAngle = Degrees.of(450);
     public static final Angle midAngle = maxAngle.minus(minAngle).div(2);
     public static final boolean maxRangeLessThanOneRotation = maxAngle.in(Rotations) - minAngle.in(Rotations) <= 1.0;
 
     public static final Transform3d robotToTurret =
-            new Transform3d(new Translation3d(Inches.of(10), Inches.of(5), Inches.of(19.625)), Rotation3d.kZero);
+            new Transform3d(new Translation3d(Inches.of(3.5), Inches.of(6.375), Inches.of(19.346)), Rotation3d.kZero);
     public static final Transform2d robotToTurret2d = new Transform2d(
             robotToTurret.getTranslation().toTranslation2d(),
             robotToTurret.getRotation().toRotation2d());

@@ -20,11 +20,13 @@ import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TalonFXSConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.hardware.TalonFXS;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.MotorArrangementValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.units.measure.Angle;
@@ -64,19 +66,30 @@ public class IntakeIOHardware implements IntakeIO {
             new LoggedTunableNumber("Intake/ExtensionKP", Constants.currentMode == Mode.SIM ? 1.0 : 0.0);
     private static final LoggedTunableNumber extensionKD = new LoggedTunableNumber("Intake/ExtensionKD", 0.0);
 
-    protected final TalonFX rollerMotor;
+    protected final TalonFX leaderMotor;
+    protected final TalonFX followerMotor;
+
     protected final TalonFXS extensionMotor;
 
-    private final TalonFXConfiguration rollerConfig;
+    private final TalonFXConfiguration leaderConfig;
+    private final TalonFXConfiguration followerConfig;
+
     private final TalonFXSConfiguration extensionConfig;
 
     private final StatusSignalCollection signals = new StatusSignalCollection();
-    private final StatusSignal<Angle> rollerPositionSignal;
-    private final StatusSignal<AngularVelocity> rollerVelocitySignal;
-    private final StatusSignal<Voltage> rollerVoltageSignal;
-    private final StatusSignal<Current> rollerStatorCurrentSignal;
-    private final StatusSignal<Current> rollerSupplyCurrentSignal;
-    private final StatusSignal<Temperature> rollerTemperatureSignal;
+    private final StatusSignal<Angle> leaderPositionSignal;
+    private final StatusSignal<AngularVelocity> leaderVelocitySignal;
+    private final StatusSignal<Voltage> leaderVoltageSignal;
+    private final StatusSignal<Current> leaderStatorCurrentSignal;
+    private final StatusSignal<Current> leaderSupplyCurrentSignal;
+    private final StatusSignal<Temperature> leaderTemperatureSignal;
+    private final StatusSignal<Angle> followerPositionSignal;
+    private final StatusSignal<AngularVelocity> followerVelocitySignal;
+    private final StatusSignal<Voltage> followerVoltageSignal;
+    private final StatusSignal<Current> followerStatorCurrentSignal;
+    private final StatusSignal<Current> followerSupplyCurrentSignal;
+    private final StatusSignal<Temperature> followerTemperatureSignal;
+
     private final StatusSignal<Angle> extensionPositionSignal;
     private final StatusSignal<AngularVelocity> extensionVelocitySignal;
     private final StatusSignal<Voltage> extensionVoltageSignal;
@@ -92,14 +105,16 @@ public class IntakeIOHardware implements IntakeIO {
     private final VoltageOut extensionVoltageControlRequest = new VoltageOut(0.0);
 
     public IntakeIOHardware() {
-        rollerMotor = new TalonFX(rollerMotorId, PhoenixCANBus.canivore());
+        leaderMotor = new TalonFX(leaderMotorId, PhoenixCANBus.canivore());
+        followerMotor = new TalonFX(followerMotorId, PhoenixCANBus.canivore());
+
         extensionMotor = new TalonFXS(extensionMotorId, PhoenixCANBus.canivore());
 
         extensionConfig = new TalonFXSConfiguration()
                 .withCommutation(new CommutationConfigs().withMotorArrangement(MotorArrangementValue.Minion_JST))
                 .withMotorOutput(new MotorOutputConfigs()
                         .withNeutralMode(NeutralModeValue.Coast)
-                        .withInverted(IntakeConstants.motorInvertedValue))
+                        .withInverted(IntakeConstants.extensionMotorInvertedValue))
                 .withClosedLoopGeneral(new ClosedLoopGeneralConfigs().withContinuousWrap(false))
                 .withMotionMagic(new MotionMagicConfigs()
                         .withMotionMagicCruiseVelocity(motionMagicMaxVelocity.get())
@@ -134,21 +149,42 @@ public class IntakeIOHardware implements IntakeIO {
 
         PhoenixUtil.tryUntilOk(() -> extensionMotor.getConfigurator().apply(extensionConfig));
 
-        rollerConfig = new TalonFXConfiguration()
-                .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
+        leaderConfig = new TalonFXConfiguration()
+                .withMotorOutput(new MotorOutputConfigs()
+                        .withNeutralMode(NeutralModeValue.Coast)
+                        .withInverted(leaderMotorInvertedValue))
+                .withCurrentLimits(new CurrentLimitsConfigs()
+                        .withStatorCurrentLimit(Amps.of(120))
+                        .withSupplyCurrentLimit(Amps.of(60))
+                        .withSupplyCurrentLowerLimit(40));
+        followerConfig = new TalonFXConfiguration()
+                .withMotorOutput(new MotorOutputConfigs()
+                        .withNeutralMode(NeutralModeValue.Coast)
+                        .withInverted(followerMotorInvertedValue))
                 .withCurrentLimits(new CurrentLimitsConfigs()
                         .withStatorCurrentLimit(Amps.of(120))
                         .withSupplyCurrentLimit(Amps.of(60))
                         .withSupplyCurrentLowerLimit(40));
 
-        PhoenixUtil.tryUntilOk(() -> rollerMotor.getConfigurator().apply(rollerConfig));
+        PhoenixUtil.tryUntilOk(() -> leaderMotor.getConfigurator().apply(leaderConfig));
+        PhoenixUtil.tryUntilOk(() -> followerMotor.getConfigurator().apply(followerConfig));
+        PhoenixUtil.tryUntilOk(
+                () -> followerMotor.setControl(new Follower(leaderMotorId, MotorAlignmentValue.Aligned)));
 
-        rollerPositionSignal = rollerMotor.getPosition();
-        rollerVelocitySignal = rollerMotor.getVelocity();
-        rollerVoltageSignal = rollerMotor.getMotorVoltage();
-        rollerStatorCurrentSignal = rollerMotor.getStatorCurrent();
-        rollerSupplyCurrentSignal = rollerMotor.getSupplyCurrent();
-        rollerTemperatureSignal = rollerMotor.getDeviceTemp();
+        leaderPositionSignal = leaderMotor.getPosition();
+        leaderVelocitySignal = leaderMotor.getVelocity();
+        leaderVoltageSignal = leaderMotor.getMotorVoltage();
+        leaderStatorCurrentSignal = leaderMotor.getStatorCurrent();
+        leaderSupplyCurrentSignal = leaderMotor.getSupplyCurrent();
+        leaderTemperatureSignal = leaderMotor.getDeviceTemp();
+
+        followerPositionSignal = followerMotor.getPosition();
+        followerVelocitySignal = followerMotor.getVelocity();
+        followerVoltageSignal = followerMotor.getMotorVoltage();
+        followerStatorCurrentSignal = followerMotor.getStatorCurrent();
+        followerSupplyCurrentSignal = followerMotor.getSupplyCurrent();
+        followerTemperatureSignal = followerMotor.getDeviceTemp();
+
         extensionPositionSignal = extensionMotor.getPosition();
         extensionVelocitySignal = extensionMotor.getRotorVelocity();
         extensionVoltageSignal = extensionMotor.getMotorVoltage();
@@ -158,12 +194,18 @@ public class IntakeIOHardware implements IntakeIO {
         extensionClosedLoopReferenceSignal = extensionMotor.getClosedLoopReference();
 
         signals.addSignals(
-                rollerPositionSignal,
-                rollerVelocitySignal,
-                rollerVoltageSignal,
-                rollerStatorCurrentSignal,
-                rollerSupplyCurrentSignal,
-                rollerTemperatureSignal,
+                leaderPositionSignal,
+                leaderVelocitySignal,
+                leaderVoltageSignal,
+                leaderStatorCurrentSignal,
+                leaderSupplyCurrentSignal,
+                leaderTemperatureSignal,
+                followerPositionSignal,
+                followerVelocitySignal,
+                followerVoltageSignal,
+                followerStatorCurrentSignal,
+                followerSupplyCurrentSignal,
+                followerTemperatureSignal,
                 extensionPositionSignal,
                 extensionVelocitySignal,
                 extensionVoltageSignal,
@@ -175,19 +217,27 @@ public class IntakeIOHardware implements IntakeIO {
         signals.setUpdateFrequencyForAll(Constants.mainLoopFrequency);
 
         extensionMotor.optimizeBusUtilization();
-        rollerMotor.optimizeBusUtilization();
+        leaderMotor.optimizeBusUtilization();
+        followerMotor.optimizeBusUtilization();
     }
 
     @Override
     public void updateInputs(IntakeInputs inputs) {
         signals.refreshAll();
 
-        inputs.rollerPosition = rollerPositionSignal.getValue();
-        inputs.rollerVelocity = rollerVelocitySignal.getValue();
-        inputs.rollerVoltage = rollerVoltageSignal.getValue();
-        inputs.rollerStatorCurrent = rollerStatorCurrentSignal.getValue();
-        inputs.rollerSupplyCurrent = rollerSupplyCurrentSignal.getValue();
-        inputs.rollerTemperature = rollerTemperatureSignal.getValueAsDouble();
+        inputs.leaderPosition = leaderPositionSignal.getValue();
+        inputs.leaderVelocity = leaderVelocitySignal.getValue();
+        inputs.leaderVoltage = leaderVoltageSignal.getValue();
+        inputs.leaderStatorCurrent = leaderStatorCurrentSignal.getValue();
+        inputs.leaderSupplyCurrent = leaderSupplyCurrentSignal.getValue();
+        inputs.leaderTemperature = leaderTemperatureSignal.getValueAsDouble();
+
+        inputs.followerPosition = followerPositionSignal.getValue();
+        inputs.followerVelocity = followerVelocitySignal.getValue();
+        inputs.followerVoltage = followerVoltageSignal.getValue();
+        inputs.followerStatorCurrent = followerStatorCurrentSignal.getValue();
+        inputs.followerSupplyCurrent = followerSupplyCurrentSignal.getValue();
+        inputs.followerTemperature = followerTemperatureSignal.getValueAsDouble();
 
         inputs.extensionPosition = Meters.of(
                 extensionPositionSignal.getValue().in(Rotations) / extensionReduction * distancePerRotation.in(Meters));
@@ -238,7 +288,7 @@ public class IntakeIOHardware implements IntakeIO {
 
     @Override
     public void setRollerOutput(double value) {
-        rollerMotor.setControl(rollerDutyCycleControlRequest.withOutput(value));
+        leaderMotor.setControl(rollerDutyCycleControlRequest.withOutput(value));
     }
 
     @Override
@@ -280,7 +330,8 @@ public class IntakeIOHardware implements IntakeIO {
 
     @Override
     public void stop() {
-        rollerMotor.stopMotor();
+        leaderMotor.stopMotor();
+        followerMotor.stopMotor();
         extensionMotor.stopMotor();
     }
 }

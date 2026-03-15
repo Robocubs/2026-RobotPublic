@@ -55,7 +55,7 @@ public class IntakeIOHardware implements IntakeIO {
             "Intake/MotionMagicMaxAcceleration",
             maximumLinearVelocity.in(MetersPerSecond) / 0.2 / distancePerRotation.in(Meters) * extensionReduction);
     private static final LoggedTunableNumber motionMagicKP =
-            new LoggedTunableNumber("Intake/MotionMagicKP", Constants.currentMode == Mode.SIM ? 5.0 : 0.0);
+            new LoggedTunableNumber("Intake/MotionMagicKP", Constants.currentMode == Mode.SIM ? 5.0 : 1.0);
     private static final LoggedTunableNumber motionMagicKD = new LoggedTunableNumber("Intake/MotionMagicKD", 0.0);
 
     private static final LoggedTunableNumber extensionKG = new LoggedTunableNumber("Intake/ExtensionKG", 0.0);
@@ -63,7 +63,7 @@ public class IntakeIOHardware implements IntakeIO {
     private static final LoggedTunableNumber extensionKV = new LoggedTunableNumber("Intake/ExtensionKV", 0.0);
     private static final LoggedTunableNumber extensionKA = new LoggedTunableNumber("Intake/ExtensionKA", 0.0);
     private static final LoggedTunableNumber extensionKP =
-            new LoggedTunableNumber("Intake/ExtensionKP", Constants.currentMode == Mode.SIM ? 1.0 : 0.0);
+            new LoggedTunableNumber("Intake/ExtensionKP", Constants.currentMode == Mode.SIM ? 1.0 : 1.0);
     private static final LoggedTunableNumber extensionKD = new LoggedTunableNumber("Intake/ExtensionKD", 0.0);
 
     protected final TalonFX leaderMotor;
@@ -155,21 +155,21 @@ public class IntakeIOHardware implements IntakeIO {
                         .withInverted(leaderMotorInvertedValue))
                 .withCurrentLimits(new CurrentLimitsConfigs()
                         .withStatorCurrentLimit(Amps.of(120))
-                        .withSupplyCurrentLimit(Amps.of(60))
+                        .withSupplyCurrentLimit(Amps.of(40))
                         .withSupplyCurrentLowerLimit(40));
         followerConfig = new TalonFXConfiguration()
                 .withMotorOutput(new MotorOutputConfigs()
                         .withNeutralMode(NeutralModeValue.Coast)
-                        .withInverted(followerMotorInvertedValue))
+                        .withInverted(leaderMotorInvertedValue))
                 .withCurrentLimits(new CurrentLimitsConfigs()
                         .withStatorCurrentLimit(Amps.of(120))
-                        .withSupplyCurrentLimit(Amps.of(60))
+                        .withSupplyCurrentLimit(Amps.of(40))
                         .withSupplyCurrentLowerLimit(40));
 
         PhoenixUtil.tryUntilOk(() -> leaderMotor.getConfigurator().apply(leaderConfig));
         PhoenixUtil.tryUntilOk(() -> followerMotor.getConfigurator().apply(followerConfig));
         PhoenixUtil.tryUntilOk(
-                () -> followerMotor.setControl(new Follower(leaderMotorId, MotorAlignmentValue.Aligned)));
+                () -> followerMotor.setControl(new Follower(leaderMotorId, MotorAlignmentValue.Opposed)));
 
         leaderPositionSignal = leaderMotor.getPosition();
         leaderVelocitySignal = leaderMotor.getVelocity();
@@ -331,7 +331,6 @@ public class IntakeIOHardware implements IntakeIO {
     @Override
     public void stop() {
         leaderMotor.stopMotor();
-        followerMotor.stopMotor();
         extensionMotor.stopMotor();
     }
 }

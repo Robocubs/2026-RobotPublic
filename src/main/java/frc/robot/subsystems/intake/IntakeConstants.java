@@ -38,9 +38,10 @@ public final class IntakeConstants {
     public static final Distance maximumExtension = Inches.of(12.0);
     public static final Distance minimumExtension = Inches.of(0.0);
 
-    public static final LinearVelocity maximumLinearVelocity = InchesPerSecond.of(12.0);
-    public static final LinearAcceleration maximumLinearAcceleration = maximumLinearVelocity.div(Seconds.of(0.2));
+    public static final LinearVelocity maximumLinearVelocity = InchesPerSecond.of(48.0);
+    public static final LinearAcceleration maximumLinearAcceleration = InchesPerSecondPerSecond.of(100.0);
 
     public static final Distance extendedPosition = Inches.of(12.0);
+    public static final Distance partiallyExtendedPosition = Inches.of(4.0);
     public static final Distance retractedPosition = Inches.of(0);
 }

@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.intake;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 
 import edu.wpi.first.math.filter.Debouncer;
@@ -23,6 +24,7 @@ import frc.robot.util.tuning.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 
 import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.wpilibj2.command.Commands.sequence;
 
 public class Intake extends SubsystemBase {
     private static final LoggedTunableNumber zeroRoutineOutput =
@@ -41,6 +43,10 @@ public class Intake extends SubsystemBase {
     public void periodic() {
         io.updateInputs(inputs);
         Logger.processInputs("Intake", inputs);
+    }
+
+    BooleanSupplier atPosition(Distance position) {
+        return () -> inputs.extensionPosition.isNear(position, IntakeConstants.extensionTolerance);
     }
 
     public Command intake() {
@@ -68,11 +74,19 @@ public class Intake extends SubsystemBase {
     }
 
     public Command agitate() {
-        return this.run(() -> {
-                    io.setExtensionPosition(IntakeConstants.retractedPosition);
-                    io.setRollerOutput(.95);
-                })
-                .withName("Intake/Agitate");
+        return sequence(
+                        this.run(() -> {
+                                    io.setExtensionPosition(IntakeConstants.partiallyExtendedPosition);
+                                    io.setRollerOutput(.95);
+                                })
+                                .until(atPosition(IntakeConstants.partiallyExtendedPosition)),
+                        this.run(() -> {
+                                    io.setExtensionPosition(IntakeConstants.extendedPosition);
+                                    io.setRollerOutput(.95);
+                                })
+                                .until(atPosition(IntakeConstants.extendedPosition))
+                                .withTimeout(1.0))
+                .repeatedly();
     }
 
     public Command stop() {

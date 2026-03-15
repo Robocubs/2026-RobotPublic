@@ -85,8 +85,8 @@ public class TurretIOHardware implements TurretIO {
                         .withReverseSoftLimitThreshold(minAngle))
                 .withCurrentLimits(
                         new CurrentLimitsConfigs() // TODO: Tune current limits
-                                .withStatorCurrentLimit(Amps.of(80))
-                                .withSupplyCurrentLimit(Amps.of(40))
+                                .withStatorCurrentLimit(Amps.of(40))
+                                .withSupplyCurrentLimit(Amps.of(30))
                                 .withSupplyCurrentLowerLimit(Amps.of(30)));
 
         PhoenixUtil.tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));

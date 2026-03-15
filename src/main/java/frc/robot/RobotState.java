@@ -252,6 +252,16 @@ public class RobotState {
         return getTurretHeadingTo(getHubPose());
     }
 
+    public boolean turretIsUnderTower() {
+        var turretPose = getTurretPose();
+        return (turretPose.getX() < FieldConstants.blueTowerPose.getX()
+                        && turretPose.getY() < 0.7 + FieldConstants.blueTowerPose.getY()
+                        && turretPose.getY() > -0.7 + FieldConstants.blueTowerPose.getY())
+                || (turretPose.getX() > FieldConstants.redTowerPose.getX()
+                        && turretPose.getY() < 0.7 + FieldConstants.redTowerPose.getY()
+                        && turretPose.getY() > -0.7 + FieldConstants.redTowerPose.getY());
+    }
+
     public void addDriveMeasurements(DriveMeasurement... measurements) {
         if (measurements.length == 0) {
             return;

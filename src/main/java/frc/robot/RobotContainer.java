@@ -159,25 +159,13 @@ public class RobotContainer {
 
         superstructure.setDefaultCommand(superstructure.stop());
 
-        // Lock to center of field when A button is held
-        driverController
-                .a()
-                .whileTrue(DriveCommands.joystickDriveAtAngle(
-                        drive,
-                        () -> -driverController.getLeftY(),
-                        () -> -driverController.getLeftX(),
-                        () -> robotState.getHeadingTo(FieldConstants.center),
-                        driverController.rightTrigger()));
-
-        driverController.rightBumper().onTrue(drive.brake());
+        driverController.rightBumper().whileTrue(drive.brake());
 
         driverController
                 .start()
                 .onTrue(runOnce(() ->
                                 robotState.resetHeading(RobotState.isBlue() ? Rotation2d.kZero : Rotation2d.k180deg))
                         .withName("ResetHeading"));
-
-        driverController.y().whileTrue(drive.toPose(() -> FieldConstants.origin, false, false));
 
         driverController.back().onTrue(superstructure.zero());
 
@@ -187,8 +175,9 @@ public class RobotContainer {
                 .and(() -> !robotState.inAllianceZone() && !robotState.onAllianceBump())
                 .whileTrue(superstructure.feed());
 
+        driverController.y().onTrue(intake.agitate());
+        driverController.a().onTrue(intake.stop());
         driverController.x().onTrue(intake.intake());
-
         driverController.b().onTrue(intake.stow());
 
         // Dashboard bindings

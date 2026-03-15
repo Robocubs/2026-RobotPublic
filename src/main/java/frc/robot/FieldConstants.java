@@ -50,4 +50,15 @@ public final class FieldConstants {
             .get()
             .toPose2d()
             .transformBy(new Transform2d(Inches.of(-23.5), Inches.zero(), Rotation2d.kZero));
+
+    public static final Pose2d redTowerPose = fieldLayout
+            .getTagPose(15)
+            .get()
+            .toPose2d()
+            .transformBy(new Transform2d(Inches.of(43), Inches.zero(), Rotation2d.kZero));
+    public static final Pose2d blueTowerPose = fieldLayout
+            .getTagPose(31)
+            .get()
+            .toPose2d()
+            .transformBy(new Transform2d(Inches.of(43), Inches.zero(), Rotation2d.kZero));
 }

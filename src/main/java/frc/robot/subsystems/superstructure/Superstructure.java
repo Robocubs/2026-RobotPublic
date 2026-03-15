@@ -210,8 +210,15 @@ public class Superstructure extends SubsystemBase {
                 .until(() -> flywheel.isAtGoal()
                         && hood.isAtGoal()
                         && turret.isAtGoal()
-                        && robotState.getMatchState().getTimeToHubActive().lt(timeToShoot.get()))
-                .andThen(run(() -> applyState(SuperstructureState.SHOOTING_HUB))
+                        && robotState.getMatchState().getTimeToHubActive().lt(timeToShoot.get())
+                        && robotState.inAllianceZone())
+                .andThen(run(() -> {
+                            if (robotState.turretIsUnderTower()) {
+                                applyState(SuperstructureState.TRACKING_HUB);
+                            } else {
+                                applyState(SuperstructureState.SHOOTING_HUB);
+                            }
+                        })
                         .until(() ->
                                 robotState.getMatchState().getTimeToHubActive().gt(timeToShoot.get())))
                 .withName("Superstructure/Shoot");

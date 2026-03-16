@@ -68,12 +68,9 @@ public class IntakeIOHardware implements IntakeIO {
 
     protected final TalonFX leaderMotor;
     protected final TalonFX followerMotor;
-
     protected final TalonFXS extensionMotor;
 
-    private final TalonFXConfiguration leaderConfig;
-    private final TalonFXConfiguration followerConfig;
-
+    private final TalonFXConfiguration rollerConfig;
     private final TalonFXSConfiguration extensionConfig;
 
     private final StatusSignalCollection signals = new StatusSignalCollection();
@@ -149,25 +146,17 @@ public class IntakeIOHardware implements IntakeIO {
 
         PhoenixUtil.tryUntilOk(() -> extensionMotor.getConfigurator().apply(extensionConfig));
 
-        leaderConfig = new TalonFXConfiguration()
+        rollerConfig = new TalonFXConfiguration()
                 .withMotorOutput(new MotorOutputConfigs()
                         .withNeutralMode(NeutralModeValue.Coast)
-                        .withInverted(leaderMotorInvertedValue))
-                .withCurrentLimits(new CurrentLimitsConfigs()
-                        .withStatorCurrentLimit(Amps.of(120))
-                        .withSupplyCurrentLimit(Amps.of(40))
-                        .withSupplyCurrentLowerLimit(40));
-        followerConfig = new TalonFXConfiguration()
-                .withMotorOutput(new MotorOutputConfigs()
-                        .withNeutralMode(NeutralModeValue.Coast)
-                        .withInverted(leaderMotorInvertedValue))
+                        .withInverted(rollerMotorInvertedValue))
                 .withCurrentLimits(new CurrentLimitsConfigs()
                         .withStatorCurrentLimit(Amps.of(120))
                         .withSupplyCurrentLimit(Amps.of(40))
                         .withSupplyCurrentLowerLimit(40));
 
-        PhoenixUtil.tryUntilOk(() -> leaderMotor.getConfigurator().apply(leaderConfig));
-        PhoenixUtil.tryUntilOk(() -> followerMotor.getConfigurator().apply(followerConfig));
+        PhoenixUtil.tryUntilOk(() -> leaderMotor.getConfigurator().apply(rollerConfig));
+        PhoenixUtil.tryUntilOk(() -> followerMotor.getConfigurator().apply(rollerConfig));
         PhoenixUtil.tryUntilOk(
                 () -> followerMotor.setControl(new Follower(leaderMotorId, MotorAlignmentValue.Opposed)));
 

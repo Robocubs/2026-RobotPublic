@@ -7,9 +7,9 @@
 
 package frc.robot.subsystems.intake;
 
-import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.units.LinearVelocityUnit;
@@ -18,9 +18,12 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Constants;
+import frc.robot.RobotState;
 import frc.robot.commands.characterization.SysIdCommandSet;
 import frc.robot.util.tuning.LoggedTunableMeasure;
 import frc.robot.util.tuning.LoggedTunableNumber;
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import static edu.wpi.first.units.Units.*;
@@ -35,8 +38,12 @@ public class Intake extends SubsystemBase {
     private final IntakeIO io;
     private final IntakeInputsAutoLogged inputs = new IntakeInputsAutoLogged();
 
+    private @AutoLogOutput Distance extensionGoal = IntakeConstants.minimumExtension;
+
     public Intake(IntakeIO io) {
         this.io = io;
+
+        RobotState.getInstance().setHopperExtensionSupplier(() -> inputs.extensionPosition);
     }
 
     @Override
@@ -45,52 +52,63 @@ public class Intake extends SubsystemBase {
         Logger.processInputs("Intake", inputs);
     }
 
-    BooleanSupplier atPosition(Distance position) {
-        return () -> inputs.extensionPosition.isNear(position, IntakeConstants.extensionTolerance);
+    private void runSetpoint(Distance extension, double rollerOutput) {
+        io.setExtensionPosition(extension);
+        io.setRollerOutput(rollerOutput);
+        extensionGoal = extension;
+    }
+
+    @AutoLogOutput
+    public boolean isAtExtensionGoal() {
+        return isAtPosition(extensionGoal);
+    }
+
+    public boolean isAtPosition(Distance position) {
+        return inputs.extensionPosition.isNear(position, IntakeConstants.extensionTolerance);
+    }
+
+    public Command intakeEfficient() {
+        var debouncer = new Debouncer(1.0, DebounceType.kFalling);
+        return run(() -> runSetpoint(IntakeConstants.extendedPosition, 0.0))
+                .until(() -> inputs.extensionPosition.gt(IntakeConstants.extendedRollerActivationPosition))
+                .unless(() -> inputs.extensionPosition.gt(IntakeConstants.extendedRollerActivationPosition))
+                .andThen(run(() -> {
+                    // Run intake if robot is moving toward intake or spinning
+                    var robotVelocity = RobotState.getInstance().getTargetRobotVelocity();
+                    var rollerOutput = debouncer.calculate(robotVelocity.vxMetersPerSecond < -Constants.epsilon
+                                    || !MathUtil.isNear(0, robotVelocity.omegaRadiansPerSecond, 0.1))
+                            ? .95
+                            : 0;
+
+                    runSetpoint(extensionGoal, rollerOutput);
+                }))
+                .withName("Intake/IntakeEfficient");
     }
 
     public Command intake() {
-        return this.run(() -> {
-                    io.setExtensionPosition(IntakeConstants.extendedPosition);
-                    io.setRollerOutput(.95);
-                })
-                .withName("Intake/Intake");
+        return run(() -> runSetpoint(IntakeConstants.extendedPosition, .95)).withName("Intake/Intake");
     }
 
     public Command reverse() {
-        return this.run(() -> {
-                    io.setExtensionPosition(IntakeConstants.extendedPosition);
-                    io.setRollerOutput(-.95);
-                })
-                .withName("Intake/Reverse");
+        return run(() -> runSetpoint(IntakeConstants.extendedPosition, -.95)).withName("Intake/Reverse");
     }
 
     public Command stow() {
-        return this.run(() -> {
-                    io.setExtensionPosition(IntakeConstants.retractedPosition);
-                    io.setRollerOutput(0);
-                })
-                .withName("Intake/Stow");
+        return run(() -> runSetpoint(IntakeConstants.retractedPosition, 0)).withName("Intake/Stow");
     }
 
     public Command agitate() {
         return sequence(
-                        this.run(() -> {
-                                    io.setExtensionPosition(IntakeConstants.partiallyExtendedPosition);
-                                    io.setRollerOutput(.95);
-                                })
-                                .until(atPosition(IntakeConstants.partiallyExtendedPosition)),
-                        this.run(() -> {
-                                    io.setExtensionPosition(IntakeConstants.extendedPosition);
-                                    io.setRollerOutput(.95);
-                                })
-                                .until(atPosition(IntakeConstants.extendedPosition))
+                        run(() -> runSetpoint(IntakeConstants.partiallyExtendedPosition, .95))
+                                .until(() -> isAtExtensionGoal()),
+                        run(() -> runSetpoint(IntakeConstants.extendedPosition, .95))
+                                .until(() -> isAtExtensionGoal())
                                 .withTimeout(1.0))
                 .repeatedly();
     }
 
     public Command stop() {
-        return this.run(() -> {
+        return run(() -> {
                     io.stop();
                 })
                 .withName("Intake/Stop");

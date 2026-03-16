@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.intake;
 
+import com.ctre.phoenix6.signals.InvertedValue;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -28,7 +29,8 @@ public class IntakeIOSim extends IntakeIOHardware {
         var rollerGearbox = DCMotor.getKrakenX60(1);
         var rollerPlant = LinearSystemId.createFlywheelSystem(rollerGearbox, 0.0001, rollerReduction);
         var rollerMotorSim = new FlywheelSim(rollerPlant, rollerGearbox);
-        var rollerMotorSimState = leaderMotor.getSimState();
+        var leaderMotorSimState = leaderMotor.getSimState();
+        var followerMotorSimState = followerMotor.getSimState();
 
         var initialPosition = retractedPosition;
         var extensionMotorSim = new ElevatorSim(
@@ -45,14 +47,20 @@ public class IntakeIOSim extends IntakeIOHardware {
                 Rotations.of(initialPosition.in(Meters) / distancePerRotation.in(Meters) * extensionReduction));
 
         SimNotifier.register(deltaTime -> {
-            rollerMotorSim.setInputVoltage(rollerMotorSimState.getMotorVoltage());
+            rollerMotorSim.setInputVoltage(leaderMotorSimState.getMotorVoltage());
             rollerMotorSim.update(deltaTime.in(Seconds));
 
-            var rollerVelocity = rollerMotorSim.getAngularVelocity().times(rollerReduction);
+            var rollerVelocity = rollerMotorSim.getAngularVelocity();
 
-            rollerMotorSimState.addRotorPosition(rollerVelocity.times(deltaTime));
-            rollerMotorSimState.setRotorVelocity(rollerVelocity);
-            rollerMotorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
+            leaderMotorSimState.addRotorPosition(
+                    rollerVelocity.times(rollerReduction).times(deltaTime));
+            leaderMotorSimState.setRotorVelocity(rollerVelocity.times(rollerReduction));
+            leaderMotorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
+
+            followerMotorSimState.addRotorPosition(
+                    rollerVelocity.times(rollerReduction).times(deltaTime));
+            followerMotorSimState.setRotorVelocity(rollerVelocity.times(rollerReduction));
+            followerMotorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
 
             extensionMotorSim.setInputVoltage(extensionMotorSimState.getMotorVoltage());
             extensionMotorSim.update(deltaTime.in(Seconds));
@@ -66,9 +74,11 @@ public class IntakeIOSim extends IntakeIOHardware {
             extensionMotorSimState.setRotorVelocity(extensionVelocity.times(extensionReduction));
             extensionMotorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
 
+            var outputRollerVelocity =
+                    rollerVelocity.times(rollerMotorInvertedValue == InvertedValue.CounterClockwise_Positive ? 1 : -1);
             simRobotState.updateIntakeSim(
                     Meters.of(extensionMotorSim.getPositionMeters()).gt(minIntakingExtension)
-                            && rollerVelocity.gt(minIntakingVelocity));
+                            && outputRollerVelocity.gt(minIntakingVelocity));
         });
     }
 }

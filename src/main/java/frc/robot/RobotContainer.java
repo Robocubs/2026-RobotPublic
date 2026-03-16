@@ -177,7 +177,7 @@ public class RobotContainer {
 
         driverController.y().onTrue(intake.agitate());
         driverController.a().onTrue(intake.stop());
-        driverController.x().onTrue(intake.intake());
+        driverController.x().onTrue(intake.intakeEfficient());
         driverController.b().onTrue(intake.stow());
 
         // Dashboard bindings

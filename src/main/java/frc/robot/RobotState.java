@@ -9,12 +9,14 @@ package frc.robot;
 
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -32,6 +34,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.subsystems.drive.DriveConstants;
+import frc.robot.subsystems.intake.IntakeConstants;
 import frc.robot.subsystems.superstructure.turret.TurretConstants;
 import frc.robot.util.GeometryUtil;
 import frc.robot.util.PhysicsUtil;
@@ -63,9 +66,11 @@ public class RobotState {
     private @Setter Consumer<VisionMeasurement[]> visionMeasurementConsumer = measurements -> {};
     private @Setter Consumer<Pose2d> poseResetConsumer = pose -> {};
     private @Setter Consumer<Rotation2d> headingResetConsumer = heading -> {};
+    private @Setter Supplier<Distance> hopperExtensionSupplier = () -> Meters.zero();
 
     private @AutoLogOutput @Getter Pose2d pose = Pose2d.kZero;
     private @AutoLogOutput @Getter Pose3d turretPose = GeometryUtil.toPose3d(TurretConstants.robotToTurret);
+    private @AutoLogOutput @Getter Pose3d extendedHopperPose = Pose3d.kZero;
     private @AutoLogOutput @Getter ChassisSpeeds robotVelocity = new ChassisSpeeds();
     private @AutoLogOutput @Getter ChassisSpeeds fieldVelocity = new ChassisSpeeds();
     private @AutoLogOutput @Getter ChassisSpeeds targetRobotVelocity = new ChassisSpeeds();
@@ -253,7 +258,6 @@ public class RobotState {
     }
 
     public boolean turretIsUnderTower() {
-        var turretPose = getTurretPose();
         return (turretPose.getX() < FieldConstants.blueTowerPose.getX()
                         && turretPose.getY() < 0.7 + FieldConstants.blueTowerPose.getY()
                         && turretPose.getY() > -0.7 + FieldConstants.blueTowerPose.getY())
@@ -280,6 +284,7 @@ public class RobotState {
         var lastMeasurement = measurements[measurements.length - 1];
         pose = PhysicsUtil.predictCurrentPoseFromRobotSpeeds(
                 lastMeasurement.pose, lastMeasurement.measuredSpeeds, lastMeasurement.timestampSeconds);
+        extendedHopperPose = calculateExtendedHopperPose();
         robotVelocity = lastMeasurement.measuredSpeeds;
         fieldVelocity = ChassisSpeeds.fromRobotRelativeSpeeds(robotVelocity, getHeading());
         targetRobotVelocity = lastMeasurement.targetSpeeds;
@@ -305,6 +310,7 @@ public class RobotState {
     public void resetPose(Pose2d pose) {
         this.pose = pose;
         turretPose = calculateTurretPose(pose, getTurretRotation());
+        extendedHopperPose = calculateExtendedHopperPose();
         field.setRobotPose(pose);
 
         poseBuffer.clear();
@@ -316,6 +322,7 @@ public class RobotState {
     public void resetHeading(Rotation2d heading) {
         pose = new Pose2d(pose.getTranslation(), heading);
         turretPose = calculateTurretPose(pose, getTurretRotation());
+        extendedHopperPose = calculateExtendedHopperPose();
         field.setRobotPose(pose);
 
         poseBuffer.clear();
@@ -332,6 +339,28 @@ public class RobotState {
         return new Pose3d(robotPose)
                 .plus(TurretConstants.robotToTurret)
                 .plus(new Transform3d(Translation3d.kZero, new Rotation3d(turretRotation)));
+    }
+
+    private Pose3d calculateExtendedHopperPose() {
+        return calculateExtendedHopperPose(pose, hopperExtensionSupplier.get());
+    }
+
+    private Pose3d calculateExtendedHopperPose(Pose2d robotPose, Distance hopperExtension) {
+        var maximumExtensionMeters = IntakeConstants.maximumExtension.in(Meters);
+        var extensionMeters = hopperExtension.in(Meters);
+        var extendedHeightMeters = IntakeConstants.extendedHeight.in(Meters);
+        var retractedHeightMeters = IntakeConstants.retractedHeight.in(Meters);
+        var height = (maximumExtensionMeters - extensionMeters)
+                        / maximumExtensionMeters
+                        * (retractedHeightMeters - extendedHeightMeters)
+                + retractedHeightMeters
+                - extendedHeightMeters;
+        var extendedHopperPose2d = pose.transformBy(new Transform2d(-extensionMeters, 0.0, Rotation2d.kZero));
+        return new Pose3d(
+                extendedHopperPose2d.getX(),
+                extendedHopperPose2d.getY(),
+                height,
+                new Rotation3d(extendedHopperPose2d.getRotation()));
     }
 
     @AllArgsConstructor

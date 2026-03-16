@@ -16,6 +16,8 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.units.AngularAccelerationUnit;
+import edu.wpi.first.units.AngularVelocityUnit;
 import edu.wpi.first.units.LinearAccelerationUnit;
 import edu.wpi.first.units.LinearVelocityUnit;
 import edu.wpi.first.units.measure.AngularAcceleration;
@@ -80,8 +82,14 @@ public final class DriveConstants {
     public static final double translationDeadband = 0.1;
     public static final double rotationDeadband = 0.1;
 
-    public static final LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity> tunableSmoothSpeed =
-            new LoggedTunableMeasure<>("Drive/SmoothSpeed", MetersPerSecond.of(1.5));
-    public static final LoggedTunableMeasure<LinearAccelerationUnit, LinearAcceleration> tunableSmoothAcceleration =
-            new LoggedTunableMeasure<>("Drive/SmoothAcceleration", maxAcceleration.times(0.5));
+    public static final LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity> maxSmoothSpeed =
+            new LoggedTunableMeasure<>("Drive/MaxSmoothSpeed", MetersPerSecond.of(1.5));
+    public static final LoggedTunableMeasure<LinearAccelerationUnit, LinearAcceleration> maxSmoothAcceleration =
+            new LoggedTunableMeasure<>("Drive/MaxSmoothAcceleration", MetersPerSecondPerSecond.of(9.0));
+
+    public static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> maxSmoothAngularVelocity =
+            new LoggedTunableMeasure<>("Drive/MaxSmoothAngularVelocity", RadiansPerSecond.of(Math.PI * 1.0));
+    public static final LoggedTunableMeasure<AngularAccelerationUnit, AngularAcceleration>
+            maxSmoothAngularAcceleration = new LoggedTunableMeasure<>(
+                    "Drive/MaxSmoothAngularAcceleration", RadiansPerSecondPerSecond.of(Math.PI * 8.0));
 }

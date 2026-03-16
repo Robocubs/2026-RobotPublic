@@ -148,8 +148,13 @@ public class Superstructure extends SubsystemBase {
                 flywheel.setVelocity(superstructureSetpoint.flywheelVelocity);
                 hood.setAngle(superstructureSetpoint.hoodAngle);
                 turret.setAngle(superstructureSetpoint.turretAngle);
-                indexer.setVelocity(indexerShootingVelocity.get());
-                kicker.setVelocity(kickerShootingVelocity.get());
+                if (turret.isWrapping()) {
+                    indexer.stop();
+                    kicker.stop();
+                } else {
+                    indexer.setVelocity(indexerShootingVelocity.get());
+                    kicker.setVelocity(kickerShootingVelocity.get());
+                }
             }
             case TUNING -> {
                 var shouldFeed = tuningDebouncer.calculate(flywheel.isAtVelocity(flywheelVelocity.get())

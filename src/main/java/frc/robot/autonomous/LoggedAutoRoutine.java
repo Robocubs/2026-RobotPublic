@@ -21,8 +21,12 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants;
 import frc.robot.RobotState;
+import frc.robot.commands.SubsystemScheduler;
 import frc.robot.commands.logging.LoggedCommands;
 import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.superstructure.Superstructure;
+import frc.robot.subsystems.superstructure.Superstructure.SuperstructureState;
 import frc.robot.util.GeometryUtil;
 import frc.robot.util.PathBuilder;
 import org.littletonrobotics.junction.Logger;
@@ -37,14 +41,23 @@ public class LoggedAutoRoutine {
     private final Drive drive;
     private final List<Command> commands = new ArrayList<>();
     private final PathBuilder pathBuilder = new PathBuilder();
+    private final SubsystemScheduler<Superstructure> superstructure;
+    private final SubsystemScheduler<Intake> intake;
 
     private boolean bound = false;
 
-    public LoggedAutoRoutine(String name, AutoFactory factory, Drive drive) {
+    public LoggedAutoRoutine(
+            String name,
+            AutoFactory factory,
+            Drive drive,
+            SubsystemScheduler<Superstructure> superstructure,
+            SubsystemScheduler<Intake> intake) {
         this.factory = factory;
         this.routine = factory.newRoutine(name);
         this.name = name;
         this.drive = drive;
+        this.superstructure = superstructure;
+        this.intake = intake;
     }
 
     public AutoRoutine build() {
@@ -52,7 +65,10 @@ public class LoggedAutoRoutine {
             routine.active()
                     .onTrue(sequence(
                             print("Starting " + name),
-                            LoggedCommands.loggedSequence(commands.toArray(Command[]::new)),
+                            deadline(
+                                    LoggedCommands.loggedSequence(commands.toArray(Command[]::new)),
+                                    superstructure.cmd(),
+                                    intake.cmd()),
                             print("Finished " + name)));
         }
 
@@ -126,6 +142,13 @@ public class LoggedAutoRoutine {
         return this;
     }
 
+    public Pose2d getInitialPose(String pathName) {
+        return routine.trajectory(pathName)
+                .getRawTrajectory()
+                .getInitialPose(false)
+                .get();
+    }
+
     public LoggedAutoRoutine resetPose(String pathName) {
         commands.add(factory.resetOdometry(pathName));
         routine.trajectory(pathName).getRawTrajectory().getInitialPose(false).ifPresent(pathBuilder::add);
@@ -157,6 +180,30 @@ public class LoggedAutoRoutine {
         return this;
     }
 
+    public LoggedAutoRoutine driveToInitialPose(String pathName) {
+        driveToPose(getInitialPose(pathName), false);
+        return this;
+    }
+
+    public LoggedAutoRoutine setSuperstructureState(SuperstructureState state) {
+        commands.add(superstructure.schedule(s -> s.trackingHubForPose()));
+        return this;
+    }
+
+    public LoggedAutoRoutine followPathAndShoot(String pathName, int splitIndex, double shootSeconds) {
+        var path = routine.trajectory(pathName, splitIndex);
+        commands.add(path.cmd());
+        pathBuilder.add(path.getRawTrajectory().getPoses());
+
+        commands.add(deadline(
+                // Hold the robot still while shooting for shootSeconds, then the sequence continues
+                Commands.waitSeconds(shootSeconds),
+                drive.withRobotSpeeds(() -> new ChassisSpeeds()),
+                superstructure.schedule(s -> s.shoot())));
+        commands.add(superstructure.schedule(s -> s.trackingHubForPose()));
+        return this;
+    }
+
     public LoggedAutoRoutine pointModulesUntil(Rotation2d target, BooleanSupplier condition) {
         commands.add(drive.pointModules(() -> target).until(condition).withName("PointModulesAndWaitForCondition"));
         return this;
@@ -173,6 +220,25 @@ public class LoggedAutoRoutine {
         commands.add(drive.pointModulesAt(() -> GeometryUtil.autoFlip(target))
                 .withTimeout(seconds)
                 .withName("PointModulesAndWait"));
+        return this;
+    }
+
+    public LoggedAutoRoutine intake() {
+        commands.add(intake.schedule(i -> i.intake()));
+        return this;
+    }
+
+    public LoggedAutoRoutine stowIntake() {
+        commands.add(intake.schedule(i -> i.stow()));
+        return this;
+    }
+
+    public LoggedAutoRoutine shoot(double shootSeconds) {
+        commands.add(deadline(
+                // Hold the robot still while shooting for shootSeconds, then the sequence continues
+                Commands.waitSeconds(shootSeconds),
+                drive.withRobotSpeeds(() -> new ChassisSpeeds()),
+                superstructure.schedule(s -> s.shoot())));
         return this;
     }
 }

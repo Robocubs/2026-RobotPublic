@@ -29,10 +29,12 @@ public class AprilTagIOSim extends AprilTagIOHardware {
         if (visionSim == null) {
             visionSim = new VisionSystemSim("main");
             visionSim.addAprilTags(FieldConstants.fieldLayout);
+            simRobotState.addPoseResetConsumer(visionSim::resetRobotPose);
         }
 
         cameraSim = new PhotonCameraSim(
                 camera, new SimCameraProperties().setCalibration(1280, 800, Rotation2d.fromDegrees(97.65)));
+        cameraSim.setMaxSightRange(4.5);
         visionSim.addCamera(cameraSim, config.robotToCamera.apply(0.0));
     }
 

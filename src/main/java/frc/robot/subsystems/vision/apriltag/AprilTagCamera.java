@@ -23,6 +23,7 @@ import frc.robot.FieldConstants;
 import frc.robot.RobotState;
 import org.littletonrobotics.junction.Logger;
 
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static frc.robot.subsystems.vision.VisionConstants.*;
 
 public class AprilTagCamera {
@@ -60,14 +61,13 @@ public class AprilTagCamera {
                     .map(target -> robotPose.plus(robotToCamera).plus(target.bestCameraToTarget))
                     .forEach(targetPoses::add);
 
+            var robotAngularVelocity = robotState.getRobotAngularVelocity(pipelineResult.timestamp);
+            var turretAngularVelocity =
+                    robotAngularVelocity.plus(robotState.getTurretAngularVelocity(pipelineResult.timestamp));
             var isValidRobotState =
                     robotState.getRobotSpeed(pipelineResult.timestamp).lt(maxRobotLinearVelocity.get())
-                            && robotState
-                                    .getRobotAngularVelocity(pipelineResult.timestamp)
-                                    .lt(maxRobotAngularVelocity.get())
-                            && robotState
-                                    .getTurretAngularVelocity(pipelineResult.timestamp)
-                                    .lt(maxTurretAngularVelocity.get());
+                            && robotAngularVelocity.isNear(RadiansPerSecond.zero(), maxRobotAngularVelocity.get())
+                            && turretAngularVelocity.isNear(RadiansPerSecond.zero(), maxTurretAngularVelocity.get());
 
             if (pipelineResult.multiTargetResult.isPresent()) {
                 var multiTargetResult = pipelineResult.multiTargetResult.get();

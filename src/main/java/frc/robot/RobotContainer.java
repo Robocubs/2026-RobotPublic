@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.autonomous.AutoRoutines;
 import frc.robot.autonomous.LoggedAutoChooser;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.SubsystemScheduler;
 import frc.robot.commands.characterization.DriveCharacterization;
 import frc.robot.simulation.SimRobotState;
 import frc.robot.subsystems.drive.Drive;
@@ -121,9 +122,14 @@ public class RobotContainer {
         RobotModeTriggers.autonomous()
                 .whileTrue(autoChooser.selectedCommandScheduler().withName("Autonomous"));
 
-        var autoRoutines = new AutoRoutines(drive);
+        var superstructureScheduler = new SubsystemScheduler<Superstructure>(superstructure, superstructure.stop());
+        var intakeScheduler = new SubsystemScheduler<Intake>(intake, intake.stop());
+
+        var autoRoutines = new AutoRoutines(drive, superstructureScheduler, intakeScheduler);
 
         autoChooser.addRoutine("Demo", autoRoutines::demo);
+        autoChooser.addRoutine("Left", autoRoutines::Left);
+        autoChooser.addRoutine("Right", autoRoutines::Right);
 
         if (Constants.characterizationEnabled) {
             var characterizationChooser = new LoggedAutoChooser("Characterization");
@@ -157,7 +163,7 @@ public class RobotContainer {
 
         intake.setDefaultCommand(intake.stop());
 
-        superstructure.setDefaultCommand(superstructure.stop());
+        superstructure.setDefaultCommand(superstructure.defaultCommand());
 
         driverController.rightBumper().whileTrue(drive.brake());
 
@@ -167,7 +173,8 @@ public class RobotContainer {
                                 robotState.resetHeading(RobotState.isBlue() ? Rotation2d.kZero : Rotation2d.k180deg))
                         .withName("ResetHeading"));
 
-        driverController.back().onTrue(superstructure.zero());
+        driverController.back().onTrue(superstructure.stop());
+        driverController.back().onTrue(intake.stop());
 
         driverController.rightTrigger().whileTrue(superstructure.shoot());
         driverController

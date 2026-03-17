@@ -78,6 +78,9 @@ public class RobotState {
     private @AutoLogOutput @Getter LinearVelocity robotSpeed = MetersPerSecond.zero();
     private @AutoLogOutput @Getter LinearVelocity maxSpeed = DriveConstants.maxSpeed;
     private @AutoLogOutput @Getter FieldZone currentFieldZone = FieldZone.ALLIANCE_ZONE;
+    private @AutoLogOutput @Getter FieldZone mostRecentMajorFieldZone = FieldZone.ALLIANCE_ZONE;
+    private @AutoLogOutput @Getter Pose2d autoPathStart = Pose2d.kZero;
+    private @AutoLogOutput @Getter double lastVisionMeasurementTimestamp = 0.0;
 
     @Getter(lazy = true)
     private static final RobotState instance = new RobotState();
@@ -103,26 +106,32 @@ public class RobotState {
         if (isBlue()) {
             if (x < FieldConstants.blueAllianceThreshold) {
                 currentFieldZone = FieldZone.ALLIANCE_ZONE;
+                mostRecentMajorFieldZone = FieldZone.ALLIANCE_ZONE;
             } else if (x <= FieldConstants.blueNeutralZoneStart) {
                 currentFieldZone = FieldZone.ALLIANCE_BUMP;
             } else if (x < FieldConstants.redNeutralZoneStart) {
                 currentFieldZone = FieldZone.NEUTRAL_ZONE;
+                mostRecentMajorFieldZone = FieldZone.NEUTRAL_ZONE;
             } else if (x <= FieldConstants.redAllianceThreshold) {
                 currentFieldZone = FieldZone.OPPONENT_BUMP;
             } else {
                 currentFieldZone = FieldZone.OPPONENT_ZONE;
+                mostRecentMajorFieldZone = FieldZone.OPPONENT_ZONE;
             }
         } else {
             if (x > FieldConstants.redAllianceThreshold) {
                 currentFieldZone = FieldZone.ALLIANCE_ZONE;
+                mostRecentMajorFieldZone = FieldZone.ALLIANCE_ZONE;
             } else if (x >= FieldConstants.redNeutralZoneStart) {
                 currentFieldZone = FieldZone.ALLIANCE_BUMP;
             } else if (x > FieldConstants.blueNeutralZoneStart) {
                 currentFieldZone = FieldZone.NEUTRAL_ZONE;
+                mostRecentMajorFieldZone = FieldZone.NEUTRAL_ZONE;
             } else if (x >= FieldConstants.blueAllianceThreshold) {
                 currentFieldZone = FieldZone.OPPONENT_BUMP;
             } else {
                 currentFieldZone = FieldZone.OPPONENT_ZONE;
+                mostRecentMajorFieldZone = FieldZone.OPPONENT_ZONE;
             }
         }
     }
@@ -145,6 +154,18 @@ public class RobotState {
 
     public boolean inOpponentZone() {
         return currentFieldZone == FieldZone.OPPONENT_ZONE;
+    }
+
+    public boolean mostRecentlyInAllianceZone() {
+        return mostRecentMajorFieldZone == FieldZone.ALLIANCE_ZONE;
+    }
+
+    public boolean mostRecentlyInNeutralZone() {
+        return mostRecentMajorFieldZone == FieldZone.NEUTRAL_ZONE;
+    }
+
+    public boolean mostRecentlyInOpponentZone() {
+        return mostRecentMajorFieldZone == FieldZone.OPPONENT_ZONE;
     }
 
     @AutoLogOutput
@@ -248,6 +269,10 @@ public class RobotState {
         return isBlue() ? FieldConstants.blueHubPose : FieldConstants.redHubPose;
     }
 
+    public Pose2d getOpposingHubPose() {
+        return isBlue() ? FieldConstants.redHubPose : FieldConstants.blueHubPose;
+    }
+
     public Rotation2d getTurretShootingRotation() {
         return getTurretShootingHeading().minus(getHeading());
     }
@@ -294,6 +319,10 @@ public class RobotState {
 
     public void addVisionMeasurements(VisionMeasurement... measurements) {
         visionMeasurementConsumer.accept(measurements);
+
+        if (measurements.length > 0) {
+            lastVisionMeasurementTimestamp = Timer.getTimestamp();
+        }
     }
 
     public void addSuperstructureMeasurement(Angle turretRotation, AngularVelocity turretAngularVelocity) {
@@ -333,6 +362,7 @@ public class RobotState {
 
     public void setPath(Pose2d... poses) {
         field.getObject("Path").setPoses(poses);
+        autoPathStart = poses.length > 0 ? poses[0] : Pose2d.kZero;
     }
 
     private Pose3d calculateTurretPose(Pose2d robotPose, Rotation2d turretRotation) {

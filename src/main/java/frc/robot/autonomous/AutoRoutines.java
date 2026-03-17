@@ -12,7 +12,11 @@ import choreo.auto.AutoRoutine;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.RobotState;
+import frc.robot.commands.SubsystemScheduler;
 import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.superstructure.Superstructure;
+import frc.robot.subsystems.superstructure.Superstructure.SuperstructureState;
 import frc.robot.util.GeometryUtil;
 import org.littletonrobotics.junction.Logger;
 
@@ -20,9 +24,14 @@ public class AutoRoutines {
     private final RobotState robotState = RobotState.getInstance();
     private final Drive drive;
     private final AutoFactory factory;
+    private final SubsystemScheduler<Superstructure> superstructure;
+    private final SubsystemScheduler<Intake> intake;
 
-    public AutoRoutines(Drive drive) {
+    public AutoRoutines(
+            Drive drive, SubsystemScheduler<Superstructure> superstructure, SubsystemScheduler<Intake> intake) {
         this.drive = drive;
+        this.superstructure = superstructure;
+        this.intake = intake;
 
         factory = new AutoFactory(
                 robotState::getPose, robotState::resetPose, drive::followPath, true, drive, (trajectory, starting) -> {
@@ -38,7 +47,7 @@ public class AutoRoutines {
     }
 
     private LoggedAutoRoutine create(String name) {
-        return new LoggedAutoRoutine(name, factory, drive);
+        return new LoggedAutoRoutine(name, factory, drive, superstructure, intake);
     }
 
     public AutoRoutine demo() {
@@ -46,6 +55,26 @@ public class AutoRoutines {
                 .resetPose("Demo")
                 .followPath("Demo")
                 .driveToPose(new Pose2d(2.0, 2.0, Rotation2d.kZero))
+                .build();
+    }
+
+    public AutoRoutine Left() {
+        return create("Left")
+                .requireStartingPose("Left")
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("Left")
+                .shoot(11.4)
+                .build();
+    }
+
+    public AutoRoutine Right() {
+        return create("Right")
+                .requireStartingPose("Right")
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("Right")
+                .shoot(11.4)
                 .build();
     }
 }

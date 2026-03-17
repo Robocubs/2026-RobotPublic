@@ -7,7 +7,10 @@
 
 package frc.robot.simulation;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -49,7 +52,7 @@ public class SimRobotState {
     private static LoggedTunableNumber maxBallsPerSecond = new LoggedTunableNumber("Simulation/MaxBallsPerSecond", 8.0);
 
     public static final Time simLoopPeriod = Seconds.of(0.004);
-    public static final Pose2d initialPose = new Pose2d(FieldConstants.center.getX(), 1.0, Rotation2d.kCCW_90deg);
+    public static final Pose2d initialPose = new Pose2d(FieldConstants.center.getX(), 1.0, Rotation2d.kCW_90deg);
 
     private static final double fuelDiameterMeters = 0.15;
     private static final AngularVelocity minIndexerVelocityToShoot = RotationsPerSecond.of(0.1);
@@ -60,6 +63,7 @@ public class SimRobotState {
 
     private final ConcurrentTimeInterpolatableBuffer<Pose2d> poseBuffer =
             ConcurrentTimeInterpolatableBuffer.createBuffer(RobotState.lookbackTimeSeconds);
+    private final List<Consumer<Pose2d>> poseResetConsumers = new ArrayList<>();
 
     private boolean hasInit = false;
     private Notifier simNotifier;
@@ -106,8 +110,6 @@ public class SimRobotState {
                 RobotConstants.maxCapacity);
         intakeSim.setGamePiecesCount(8);
 
-        resetPose(new Pose2d(FieldConstants.center.getX(), 1.0, Rotation2d.kCCW_90deg));
-
         simNotifier = new Notifier(() -> {
             try {
                 SimulatedArena.getInstance().simulationPeriodic();
@@ -121,6 +123,19 @@ public class SimRobotState {
     }
 
     public void reset() {
+        if (hasInit) {
+            arena.setEfficiencyMode(useEfficiencyMode.get());
+            arena.resetFieldForAuto();
+            intakeSim.setGamePiecesCount(8);
+        }
+    }
+
+    public void resetForAuto() {
+        var autoPathStart = RobotState.getInstance().getAutoPathStart();
+        if (!Pose2d.kZero.equals(autoPathStart)) {
+            resetPose(autoPathStart);
+            RobotState.getInstance().resetPose(autoPathStart);
+        }
         if (hasInit) {
             arena.setEfficiencyMode(useEfficiencyMode.get());
             arena.resetFieldForAuto();
@@ -196,6 +211,10 @@ public class SimRobotState {
         poseBuffer.addSample(timestamp, pose);
     }
 
+    public void addPoseResetConsumer(Consumer<Pose2d> consumer) {
+        poseResetConsumers.add(consumer);
+    }
+
     public Pose2d getPose() {
         return poseBuffer.getSample(Timer.getFPGATimestamp()).orElse(Pose2d.kZero);
     }
@@ -207,10 +226,13 @@ public class SimRobotState {
     public void resetPose(Pose2d pose) {
         if (swerveDriveSim != null) {
             swerveDriveSim.setSimulationWorldPose(pose);
+            Timer.delay(Seconds.of(0.05));
         }
 
         poseBuffer.clear();
         poseBuffer.addSample(Timer.getFPGATimestamp(), pose);
+
+        poseResetConsumers.forEach(consumer -> consumer.accept(pose));
     }
 
     public void resetRotation(Rotation2d rotation) {

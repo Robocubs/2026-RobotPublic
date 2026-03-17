@@ -7,6 +7,8 @@
 
 package frc.robot;
 
+import java.util.stream.IntStream;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -26,6 +28,11 @@ public final class FieldConstants {
     public static final Distance fieldWidth = Meters.of(fieldLayout.getFieldWidth());
     public static final Pose2d origin = GeometryUtil.autoFlip(Pose2d.kZero);
     public static final Translation2d center = new Translation2d(fieldLength.div(2.0), fieldWidth.div(2.0));
+
+    public static final int[] blueHubPoses = new int[] {18, 19, 20, 21, 24, 25, 26, 27};
+    public static final int[] redHubPoses = new int[] {2, 3, 4, 5, 8, 9, 10, 11};
+    public static final int[] allHubPoses = IntStream.concat(IntStream.of(blueHubPoses), IntStream.of(redHubPoses))
+            .toArray();
 
     public static final double redAllianceThreshold =
             fieldLayout.getTagPose(10).get().getX();

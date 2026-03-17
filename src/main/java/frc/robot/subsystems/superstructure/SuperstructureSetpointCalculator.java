@@ -16,11 +16,12 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import frc.robot.Constants;
 import frc.robot.FieldConstants;
 import frc.robot.RobotState;
 import frc.robot.subsystems.superstructure.Superstructure.SuperstructureSetpoint;
-import frc.robot.subsystems.superstructure.hood.HoodConstants;
 import frc.robot.subsystems.superstructure.turret.Turret.TurretSetpoint;
 import frc.robot.subsystems.superstructure.turret.TurretConstants;
 import frc.robot.util.PhysicsUtil;
@@ -60,6 +61,9 @@ public class SuperstructureSetpointCalculator {
 
     private static final InterpolatingDoubleTreeMap passingFlywheelVelocityMap =
             InterpolatingDoubleTreeMap.ofEntries(Map.entry(3.0, 200.0), Map.entry(14.0, 500.0));
+    private static final Angle passingHoodAngle = Degrees.of(50);
+
+    private static final AngularVelocity idleFlywheelVelocity = RadiansPerSecond.of(200.0);
 
     private static final double bluePassingPointX = FieldConstants.blueAllianceThreshold - 1.5;
     private static final double redPassingPointX = FieldConstants.redAllianceThreshold + 1.5;
@@ -72,7 +76,24 @@ public class SuperstructureSetpointCalculator {
     private final RobotState robotState = RobotState.getInstance();
     private final Supplier<ChassisSpeeds> fieldVelocity = robotState::getFieldVelocity;
 
-    public SuperstructureSetpoint getSetpointForHub() {
+    public SuperstructureSetpoint getSetpointForTrackingPose() {
+        var pose = robotState.mostRecentlyInOpponentZone() ? robotState.getOpposingHubPose() : robotState.getHubPose();
+        var turretSetpoint = getTurretSetpointFor(pose.getTranslation());
+
+        if (robotState.mostRecentlyInAllianceZone()) {
+            var shootingSetpoint = getSetpointForShooting();
+            return new SuperstructureSetpoint(
+                    shootingSetpoint.flywheelVelocity(),
+                    shootingSetpoint.hoodAngle(),
+                    turretSetpoint.position(),
+                    turretSetpoint.velocity());
+        }
+
+        return new SuperstructureSetpoint(
+                idleFlywheelVelocity, passingHoodAngle, turretSetpoint.position(), turretSetpoint.velocity());
+    }
+
+    public SuperstructureSetpoint getSetpointForShooting() {
         var adjustedHubTranslation = adjustTranslationForRobotMovement(
                 robotState.getHubPose().getTranslation(),
                 timeOfFlightMap.get(robotState.getDistanceToHub().in(Meters)));
@@ -104,7 +125,7 @@ public class SuperstructureSetpointCalculator {
         Logger.recordOutput("SuperstructureSetpointCalculator/PassingPose", passingPose);
         return new SuperstructureSetpoint(
                 RadiansPerSecond.of(flywheelVelocity),
-                HoodConstants.maxAngle,
+                passingHoodAngle,
                 turretSetpointForPassing.position(),
                 turretSetpointForPassing.velocity());
     }

@@ -14,6 +14,7 @@ import edu.wpi.first.units.LinearVelocityUnit;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.RobotState;
+import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.superstructure.turret.TurretConstants;
 import frc.robot.subsystems.vision.apriltag.AprilTagConfig;
 import frc.robot.util.tuning.LoggedTunableMeasure;
@@ -28,13 +29,16 @@ public final class VisionConstants {
 
     public static final LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity> maxRobotLinearVelocity =
             new LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity>(
-                    "Vision/MaxRobotLinearVelocity", MetersPerSecond.of(2.0));
+                    "Vision/MaxRobotLinearVelocity",
+                    DriveConstants.maxSmoothSpeed.get().times(1.1));
     public static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> maxRobotAngularVelocity =
             new LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity>(
-                    "Vision/MaxRobotAngularVelocity", RotationsPerSecond.of(0.2));
+                    "Vision/MaxRobotAngularVelocity",
+                    DriveConstants.maxSmoothAngularVelocity.get().times(1.1));
     public static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> maxTurretAngularVelocity =
             new LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity>(
-                    "Vision/MaxTurretAngularVelocity", RotationsPerSecond.of(0.2));
+                    "Vision/MaxTurretAngularVelocity",
+                    DriveConstants.maxSmoothAngularVelocity.get().times(1.1));
 
     public static final double linearStdDevBaseline = 0.01; // Meters
     public static final double angularStdDevBaseline = 0.001; // Radians

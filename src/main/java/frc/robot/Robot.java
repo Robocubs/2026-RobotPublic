@@ -101,7 +101,7 @@ public class Robot extends LoggedRobot {
     @Override
     public void autonomousInit() {
         if (isSimulation()) {
-            robotContainer.simRobotState.ifPresent(SimRobotState::reset);
+            robotContainer.simRobotState.ifPresent(SimRobotState::resetForAuto);
         }
     }
 

@@ -130,6 +130,8 @@ public class RobotContainer {
         autoChooser.addRoutine("Demo", autoRoutines::demo);
         autoChooser.addRoutine("Left", autoRoutines::Left);
         autoChooser.addRoutine("Right", autoRoutines::Right);
+        autoChooser.addRoutine("NewLeftFinalVersion", autoRoutines::NewLeftFinalVersion);
+        autoChooser.addRoutine("NewRightFinalVersion", autoRoutines::NewRightFinalVersion);
 
         if (Constants.characterizationEnabled) {
             var characterizationChooser = new LoggedAutoChooser("Characterization");
@@ -181,6 +183,11 @@ public class RobotContainer {
                 .leftTrigger()
                 .and(() -> !robotState.inAllianceZone() && !robotState.onAllianceBump())
                 .whileTrue(superstructure.feed());
+
+        driverController
+                .leftTrigger()
+                .and(() -> robotState.inAllianceZone())
+                .whileTrue(superstructure.shootWithTuning());
 
         driverController.y().onTrue(intake.agitate());
         driverController.a().onTrue(intake.stop());

@@ -42,6 +42,6 @@ public final class IntakeConstants {
 
     public static final Distance extendedPosition = Inches.of(12.0);
     public static final Distance partiallyExtendedPosition = Inches.of(4.0);
-    public static final Distance retractedPosition = Inches.of(0);
+    public static final Distance retractedPosition = Inches.of(2.0);
     public static final Distance extendedRollerActivationPosition = extendedPosition.minus(Inches.of(2.0));
 }

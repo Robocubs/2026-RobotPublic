@@ -21,7 +21,6 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
@@ -37,12 +36,10 @@ import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.superstructure.flywheel.FlywheelConstants.*;
 
 public class FlywheelIOHardware implements FlywheelIO {
-    private static final LoggedTunableNumber kS = new LoggedTunableNumber("Flywheel/kS", 0.17591);
-    private static final LoggedTunableNumber kV =
-            new LoggedTunableNumber("Flywheel/kV", Units.rotationsToRadians(0.018674));
-    private static final LoggedTunableNumber kA =
-            new LoggedTunableNumber("Flywheel/kA", Units.rotationsToRadians(0.00088465));
-    private static final LoggedTunableNumber kP = new LoggedTunableNumber("Flywheel/kP", 0.02);
+    private static final LoggedTunableNumber kS = new LoggedTunableNumber("Flywheel/kS", 0.25797);
+    private static final LoggedTunableNumber kV = new LoggedTunableNumber("Flywheel/kV", 0.12202);
+    private static final LoggedTunableNumber kA = new LoggedTunableNumber("Flywheel/kA", 0.0076363);
+    private static final LoggedTunableNumber kP = new LoggedTunableNumber("Flywheel/kP", 0.055814);
     private static final LoggedTunableNumber kD = new LoggedTunableNumber("Flywheel/kD", 0.0);
 
     protected final TalonFX leaderMotor;
@@ -84,8 +81,8 @@ public class FlywheelIOHardware implements FlywheelIO {
                         .withKP(kP.get())
                         .withKD(kD.get()))
                 .withCurrentLimits(new CurrentLimitsConfigs()
-                        .withStatorCurrentLimit(Amps.of(80))
-                        .withSupplyCurrentLimit(Amps.of(60))
+                        .withStatorCurrentLimit(Amps.of(160))
+                        .withSupplyCurrentLimit(Amps.of(80))
                         .withSupplyCurrentLowerLimit(Amps.of(40)));
 
         PhoenixUtil.tryUntilOk(() -> leaderMotor.getConfigurator().apply(motorConfig));

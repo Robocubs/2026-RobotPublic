@@ -224,12 +224,17 @@ public class LoggedAutoRoutine {
     }
 
     public LoggedAutoRoutine intake() {
-        commands.add(intake.schedule(i -> i.intake()));
+        commands.add(intake.schedule(i -> i.intakeEfficient()));
         return this;
     }
 
     public LoggedAutoRoutine stowIntake() {
         commands.add(intake.schedule(i -> i.stow()));
+        return this;
+    }
+
+    public LoggedAutoRoutine agitateIntake() {
+        commands.add(intake.schedule(i -> i.agitate()));
         return this;
     }
 

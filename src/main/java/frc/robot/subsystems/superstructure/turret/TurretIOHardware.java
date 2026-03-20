@@ -36,9 +36,9 @@ import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.superstructure.turret.TurretConstants.*;
 
 public class TurretIOHardware implements TurretIO {
-    private static final LoggedTunableNumber kS = new LoggedTunableNumber("Turret/kS", 0.3033);
-    private static final LoggedTunableNumber kV = new LoggedTunableNumber("Turret/kV", 0.62247 * 2 * Math.PI);
-    private static final LoggedTunableNumber kA = new LoggedTunableNumber("Turret/kA", 0.018354 * 2 * Math.PI);
+    private static final LoggedTunableNumber kS = new LoggedTunableNumber("Turret/kS", 0.34261);
+    private static final LoggedTunableNumber kV = new LoggedTunableNumber("Turret/kV", 4.2193);
+    private static final LoggedTunableNumber kA = new LoggedTunableNumber("Turret/kA", 0.1229);
     private static final LoggedTunableNumber kP = new LoggedTunableNumber("Turret/kP", 150.0);
     private static final LoggedTunableNumber kD = new LoggedTunableNumber("Turret/kD", 5.0);
 

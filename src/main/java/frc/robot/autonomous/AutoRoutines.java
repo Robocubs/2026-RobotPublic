@@ -64,6 +64,7 @@ public class AutoRoutines {
                 .intake()
                 .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
                 .followPath("Left")
+                .agitateIntake()
                 .shoot(11.4)
                 .build();
     }
@@ -74,7 +75,30 @@ public class AutoRoutines {
                 .intake()
                 .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
                 .followPath("Right")
+                .agitateIntake()
                 .shoot(11.4)
+                .build();
+    }
+
+    public AutoRoutine NewLeftFinalVersion() {
+        return create("NewLeftFinalVersion")
+                .requireStartingPose("NewLeftFinalVersion")
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("NewLeftFinalVersion")
+                .agitateIntake()
+                .shoot(12.4)
+                .build();
+    }
+
+    public AutoRoutine NewRightFinalVersion() {
+        return create("NewRightFinalVersion")
+                .requireStartingPose("NewRightFinalVersion")
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("NewRightFinalVersion")
+                .agitateIntake()
+                .shoot(12.4)
                 .build();
     }
 }

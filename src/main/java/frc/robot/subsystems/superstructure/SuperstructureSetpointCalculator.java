@@ -39,17 +39,17 @@ public class SuperstructureSetpointCalculator {
             Map.entry(1.84, 265.0),
             Map.entry(2.75, 280.0),
             Map.entry(3.66, 290.0),
-            Map.entry(4.50, 305.0),
+            Map.entry(4.50, 310.0),
             Map.entry(5.30, 322.5),
-            Map.entry(6.20, 340.0));
+            Map.entry(6.20, 350.0));
     private static final InterpolatingDoubleTreeMap hoodMap = InterpolatingDoubleTreeMap.ofEntries(
             Map.entry(1.17, 0.25),
             Map.entry(1.84, 0.35),
             Map.entry(2.75, 0.47),
             Map.entry(3.66, 0.6),
-            Map.entry(4.50, 0.7),
-            Map.entry(5.30, 0.75),
-            Map.entry(6.20, 0.85));
+            Map.entry(4.50, 0.68),
+            Map.entry(5.30, 0.74),
+            Map.entry(6.20, 0.8));
     private static final InterpolatingDoubleTreeMap timeOfFlightMap = InterpolatingDoubleTreeMap.ofEntries(
             Map.entry(1.17, 1.00),
             Map.entry(1.84, 1.05),

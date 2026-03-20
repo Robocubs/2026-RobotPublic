@@ -32,7 +32,7 @@ public class IntakeIOSim extends IntakeIOHardware {
         var leaderMotorSimState = leaderMotor.getSimState();
         var followerMotorSimState = followerMotor.getSimState();
 
-        var initialPosition = retractedPosition;
+        var initialPosition = minimumExtension;
         var extensionMotorSim = new ElevatorSim(
                 DCMotor.getMinion(numExtensionMotors),
                 extensionReduction,

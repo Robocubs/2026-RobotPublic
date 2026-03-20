@@ -140,9 +140,9 @@ public class IntakeIOHardware implements IntakeIO {
                         .withReverseSoftLimitThreshold(
                                 minimumExtension.in(Meters) / distancePerRotation.in(Meters) * extensionReduction))
                 .withCurrentLimits(new CurrentLimitsConfigs()
-                        .withStatorCurrentLimit(Amps.of(40))
-                        .withSupplyCurrentLimit(Amps.of(40))
-                        .withSupplyCurrentLowerLimit(30));
+                        .withStatorCurrentLimit(Amps.of(20))
+                        .withSupplyCurrentLimit(Amps.of(20))
+                        .withSupplyCurrentLowerLimit(20));
 
         PhoenixUtil.tryUntilOk(() -> extensionMotor.getConfigurator().apply(extensionConfig));
 

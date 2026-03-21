@@ -64,10 +64,10 @@ public class AprilTagCamera {
             var robotAngularVelocity = robotState.getRobotAngularVelocity(pipelineResult.timestamp);
             var turretAngularVelocity =
                     robotAngularVelocity.plus(robotState.getTurretAngularVelocity(pipelineResult.timestamp));
-            var isValidRobotState =
-                    robotState.getRobotSpeed(pipelineResult.timestamp).lt(maxRobotLinearVelocity.get())
-                            && robotAngularVelocity.isNear(RadiansPerSecond.zero(), maxRobotAngularVelocity.get())
-                            && turretAngularVelocity.isNear(RadiansPerSecond.zero(), maxTurretAngularVelocity.get());
+            var isValidRobotState = config.acceptPoses
+                    && robotState.getRobotSpeed(pipelineResult.timestamp).lt(maxRobotLinearVelocity.get())
+                    && robotAngularVelocity.isNear(RadiansPerSecond.zero(), maxRobotAngularVelocity.get())
+                    && turretAngularVelocity.isNear(RadiansPerSecond.zero(), maxTurretAngularVelocity.get());
 
             if (pipelineResult.multiTargetResult.isPresent()) {
                 var multiTargetResult = pipelineResult.multiTargetResult.get();

@@ -21,6 +21,9 @@ import frc.robot.util.GeometryUtil;
 import org.littletonrobotics.junction.Logger;
 
 public class AutoRoutines {
+    private static final Pose2d leftStartingPose = new Pose2d(3.45, 5.6, Rotation2d.fromDegrees(135));
+    private static final Pose2d rightStartingPose = new Pose2d(3.45, 2.4, Rotation2d.fromDegrees(-135));
+
     private final RobotState robotState = RobotState.getInstance();
     private final Drive drive;
     private final AutoFactory factory;
@@ -82,9 +85,10 @@ public class AutoRoutines {
 
     public AutoRoutine NewLeftFinalVersion() {
         return create("NewLeftFinalVersion")
-                .requireStartingPose("NewLeftFinalVersion")
+                .requireStartingPose(leftStartingPose)
                 .intake()
                 .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .driveToInitialPose("NewLeftFinalVersion", true)
                 .followPath("NewLeftFinalVersion")
                 .agitateIntake()
                 .shoot(12.4)
@@ -93,9 +97,10 @@ public class AutoRoutines {
 
     public AutoRoutine NewRightFinalVersion() {
         return create("NewRightFinalVersion")
-                .requireStartingPose("NewRightFinalVersion")
+                .requireStartingPose(rightStartingPose)
                 .intake()
                 .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .driveToInitialPose("NewRightFinalVersion", true)
                 .followPath("NewRightFinalVersion")
                 .agitateIntake()
                 .shoot(12.4)

@@ -76,7 +76,10 @@ public class RobotContainer {
         switch (Constants.currentMode) {
             case REAL:
                 drive = new Drive(new DriveIOHardware());
-                vision = new Vision(new AprilTagIO[] {new AprilTagIOHardware(VisionConstants.frontAprilTagConfig)});
+                vision = new Vision(new AprilTagIO[] {
+                    new AprilTagIOHardware(VisionConstants.turretCameraConfig),
+                    new AprilTagIOHardware(VisionConstants.fixedCameraConfig)
+                });
                 intake = new Intake(new IntakeIOHardware());
                 superstructure = new Superstructure(
                         new FlywheelIOHardware(),
@@ -89,8 +92,10 @@ public class RobotContainer {
                 var simRobotState = new SimRobotState();
                 this.simRobotState = Optional.of(simRobotState);
                 drive = new Drive(new DriveIOSim(simRobotState));
-                vision = new Vision(
-                        new AprilTagIO[] {new AprilTagIOSim(VisionConstants.frontAprilTagConfig, simRobotState)});
+                vision = new Vision(new AprilTagIO[] {
+                    new AprilTagIOSim(VisionConstants.turretCameraConfig, simRobotState),
+                    new AprilTagIOSim(VisionConstants.fixedCameraConfig, simRobotState)
+                });
                 intake = new Intake(new IntakeIOSim(simRobotState));
                 superstructure = new Superstructure(
                         new FlywheelIOSim(simRobotState),
@@ -101,7 +106,9 @@ public class RobotContainer {
                 break;
             default:
                 drive = new Drive(new DriveIOReplay());
-                vision = new Vision(new AprilTagIO[] {() -> VisionConstants.frontAprilTagConfig});
+                vision = new Vision(new AprilTagIO[] {
+                    () -> VisionConstants.turretCameraConfig, () -> VisionConstants.fixedCameraConfig
+                });
                 intake = new Intake(new IntakeIO() {});
                 superstructure = new Superstructure(
                         new FlywheelIO() {}, new HoodIO() {}, new TurretIO() {}, new IndexerIO() {}, new KickerIO() {});
@@ -184,10 +191,7 @@ public class RobotContainer {
                 .and(() -> !robotState.inAllianceZone() && !robotState.onAllianceBump())
                 .whileTrue(superstructure.feed());
 
-        driverController
-                .leftTrigger()
-                .and(() -> robotState.inAllianceZone())
-                .whileTrue(superstructure.shootWithTuning());
+        driverController.leftBumper().whileTrue(superstructure.shootWithTuning());
 
         driverController.y().onTrue(intake.agitate());
         driverController.a().onTrue(intake.stop());

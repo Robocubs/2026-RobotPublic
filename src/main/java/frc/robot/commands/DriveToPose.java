@@ -49,7 +49,7 @@ public class DriveToPose extends Command {
     private static final LoggedTunableMeasure<LinearAccelerationUnit, LinearAcceleration> maxLinearAcceleration =
             new LoggedTunableMeasure<>("DriveToPose/MaxLinearAcceleration", MetersPerSecondPerSecond.of(4.0));
     private static final LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity> slowModeMaxLinearVelocity =
-            new LoggedTunableMeasure<>("DriveToPose/SlowModeMaxLinearVelocity", MetersPerSecond.of(2.5));
+            new LoggedTunableMeasure<>("DriveToPose/SlowModeMaxLinearVelocity", MetersPerSecond.of(2.0));
     private static final LoggedTunableMeasure<LinearAccelerationUnit, LinearAcceleration>
             slowModeMaxLinearAcceleration = new LoggedTunableMeasure<>(
                     "DriveToPose/SlowModeMaxLinearAcceleration", MetersPerSecondPerSecond.of(2.5));

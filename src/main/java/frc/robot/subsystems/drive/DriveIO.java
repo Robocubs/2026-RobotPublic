@@ -30,6 +30,8 @@ import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.LogTable;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
+import static edu.wpi.first.units.Units.*;
+
 public interface DriveIO {
 
     public class DriveIOInputs implements LoggableInputs {
@@ -53,18 +55,18 @@ public interface DriveIO {
 
     @AutoLog
     public class ModuleIOInputs implements StructSerializable {
-        public AngularVelocity driveVelocity;
-        public Angle drivePosition;
-        public Current driveSupplyCurrent;
-        public Current driveStatorCurrent;
-        public Voltage driveVoltage;
+        public AngularVelocity driveVelocity = RadiansPerSecond.zero();
+        public Angle drivePosition = Radians.zero();
+        public Current driveSupplyCurrent = Amps.zero();
+        public Current driveStatorCurrent = Amps.zero();
+        public Voltage driveVoltage = Volts.zero();
         public double driveTemperature;
 
-        public AngularVelocity steerVelocity;
-        public Angle steerPosition;
-        public Current steerSupplyCurrent;
-        public Current steerStatorCurrent;
-        public Voltage steerVoltage;
+        public AngularVelocity steerVelocity = RadiansPerSecond.zero();
+        public Angle steerPosition = Radians.zero();
+        public Current steerSupplyCurrent = Amps.zero();
+        public Current steerStatorCurrent = Amps.zero();
+        public Voltage steerVoltage = Volts.zero();
         public double steerTemperature;
     }
 

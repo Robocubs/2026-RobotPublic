@@ -29,8 +29,7 @@ public final class VisionConstants {
 
     public static final LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity> maxRobotLinearVelocity =
             new LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity>(
-                    "Vision/MaxRobotLinearVelocity",
-                    DriveConstants.maxSmoothSpeed.get().times(1.1));
+                    "Vision/MaxRobotLinearVelocity", MetersPerSecond.of(4.5));
     public static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> maxRobotAngularVelocity =
             new LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity>(
                     "Vision/MaxRobotAngularVelocity",
@@ -50,13 +49,22 @@ public final class VisionConstants {
         CLOSEST_TO_HEADING,
     }
 
-    public static AprilTagConfig frontAprilTagConfig = AprilTagConfig.onTurret(
+    public static AprilTagConfig turretCameraConfig = AprilTagConfig.onTurret(
             "Turret",
             TurretConstants.robotToTurret,
             new Transform3d(
-                    Inches.of(1.159),
+                    Inches.of(1.316),
                     Inches.of(5.796),
-                    Inches.of(9.729),
+                    Inches.of(9.457),
                     new Rotation3d(Degrees.zero(), Degrees.of(-30), Degrees.zero())),
             (timestamp) -> RobotState.getInstance().getTurretRotation(timestamp));
+
+    public static AprilTagConfig fixedCameraConfig = new AprilTagConfig(
+            "Fixed",
+            new Transform3d(
+                    Inches.of(8.96),
+                    Inches.of(-14.454),
+                    Inches.of(24.921),
+                    new Rotation3d(Degrees.zero(), Degrees.of(-30), Degrees.zero())),
+            true);
 }

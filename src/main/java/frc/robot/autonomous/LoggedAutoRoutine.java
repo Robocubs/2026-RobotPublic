@@ -9,6 +9,7 @@ package frc.robot.autonomous;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
 import choreo.auto.AutoFactory;
@@ -79,11 +80,22 @@ public class LoggedAutoRoutine {
         return routine;
     }
 
-    public LoggedAutoRoutine requireStartingPose(String pathName) {
+    public LoggedAutoRoutine requireStartingPose(Pose2d pose) {
         if (Constants.currentMode == Constants.Mode.SIM) {
-            return this.resetPose(pathName);
+            this.resetPose(pose);
         }
 
+        commands.add(print("Starting pose too far, doing nothing")
+                .andThen(idle())
+                .unless(() ->
+                        robotState.getPose().getTranslation().getDistance(GeometryUtil.autoFlip(pose.getTranslation()))
+                                < 1.0));
+        pathBuilder.add(pose);
+
+        return this;
+    }
+
+    public LoggedAutoRoutine requireStartingPose(String pathName) {
         var trajectory = routine.trajectory(pathName);
         if (trajectory == null) {
             commands.add(runOnce(() -> System.out.println("Trajectory not found, doing nothing"))
@@ -98,14 +110,7 @@ public class LoggedAutoRoutine {
             return this;
         }
 
-        var startingPose = startingPoseOptional.get();
-        commands.add(print("Starting pose too far, doing nothing")
-                .andThen(idle())
-                .unless(() -> robotState
-                                .getPose()
-                                .getTranslation()
-                                .getDistance(GeometryUtil.autoFlip(startingPose.getTranslation()))
-                        < 1.0));
+        requireStartingPose(startingPoseOptional.get());
         return this;
     }
 
@@ -149,6 +154,12 @@ public class LoggedAutoRoutine {
                 .get();
     }
 
+    public LoggedAutoRoutine resetPose(Pose2d pose) {
+        commands.add(factory.resetOdometry(() -> Optional.of(GeometryUtil.autoFlip(pose))));
+        pathBuilder.add(pose);
+        return this;
+    }
+
     public LoggedAutoRoutine resetPose(String pathName) {
         commands.add(factory.resetOdometry(pathName));
         routine.trajectory(pathName).getRawTrajectory().getInitialPose(false).ifPresent(pathBuilder::add);
@@ -181,7 +192,17 @@ public class LoggedAutoRoutine {
     }
 
     public LoggedAutoRoutine driveToInitialPose(String pathName) {
-        driveToPose(getInitialPose(pathName), false);
+        driveToInitialPose(pathName, false);
+        return this;
+    }
+
+    public LoggedAutoRoutine driveToInitialPose(String pathName, boolean slowMode) {
+        var initialPose = getInitialPose(pathName);
+        var initialPoseFlipped = GeometryUtil.autoFlip(initialPose);
+        commands.add(drive.toPose(() -> initialPoseFlipped, true, slowMode)
+                .until(() ->
+                        robotState.getPose().getTranslation().getDistance(initialPoseFlipped.getTranslation()) <= 0.2));
+        pathBuilder.add(initialPose);
         return this;
     }
 

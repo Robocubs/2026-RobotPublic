@@ -50,9 +50,9 @@ import static edu.wpi.first.wpilibj2.command.Commands.repeatingSequence;
 
 public class Superstructure extends SubsystemBase {
     private static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> flywheelVelocity =
-            new LoggedTunableMeasure<>("Superstructure/FlywheelVelocity", RadiansPerSecond.zero());
+            new LoggedTunableMeasure<>("Superstructure/FlywheelVelocity", RadiansPerSecond.of(285));
     private static final LoggedTunableMeasure<AngleUnit, Angle> tunedHoodAngle =
-            new LoggedTunableMeasure<>("Superstructure/HoodAngle", Radians.of(0));
+            new LoggedTunableMeasure<>("Superstructure/HoodAngle", Radians.of(0.464));
     private static final LoggedTunableMeasure<AngleUnit, Angle> tunedTurretAngle =
             new LoggedTunableMeasure<>("Superstructure/TurretAngle", Radians.of(0));
 
@@ -77,7 +77,7 @@ public class Superstructure extends SubsystemBase {
 
     private final SuperstructureSetpointCalculator superstructureSetpointCalculator =
             new SuperstructureSetpointCalculator();
-    private final TrapezoidProfileController scanController = new TrapezoidProfileController(Math.PI, 10.0);
+    private final TrapezoidProfileController scanController = new TrapezoidProfileController(Math.PI / 2, 10.0);
 
     private @AutoLogOutput @Getter SuperstructureState state = SuperstructureState.STOP;
 

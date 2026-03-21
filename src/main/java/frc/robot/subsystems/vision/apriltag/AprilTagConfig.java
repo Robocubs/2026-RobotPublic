@@ -18,17 +18,28 @@ public class AprilTagConfig {
     public final String cameraName;
     public final Function<Double, Transform3d> robotToCamera;
     public final double weight;
+    public final boolean acceptPoses;
 
     public AprilTagConfig(String cameraName, Transform3d robotToCamera) {
+        this(cameraName, robotToCamera, true);
+    }
+
+    public AprilTagConfig(String cameraName, Transform3d robotToCamera, boolean acceptPoses) {
         this.cameraName = cameraName;
         this.robotToCamera = (ignored) -> robotToCamera;
         this.weight = 1.0;
+        this.acceptPoses = acceptPoses;
     }
 
     public AprilTagConfig(String cameraName, Function<Double, Transform3d> robotToCamera) {
+        this(cameraName, robotToCamera, true);
+    }
+
+    public AprilTagConfig(String cameraName, Function<Double, Transform3d> robotToCamera, boolean acceptPoses) {
         this.cameraName = cameraName;
         this.robotToCamera = robotToCamera;
         this.weight = 1.0;
+        this.acceptPoses = acceptPoses;
     }
 
     public static AprilTagConfig onTurret(

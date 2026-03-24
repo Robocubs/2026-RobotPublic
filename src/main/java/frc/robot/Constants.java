@@ -19,7 +19,8 @@ import static edu.wpi.first.units.Units.*;
  * (log replay from a file).
  */
 public final class Constants {
-    private static final Mode simMode = Mode.SIM;
+    private static final Mode simMode =
+            RobotBase.isReal() || System.getenv("AKIT_LOG_PATH") == null ? Mode.SIM : Mode.REPLAY;
     private static final RobotType realBot = RobotType.COMP_BOT;
     private static final RobotType simBot = RobotType.SIM_BOT;
     private static final boolean realBotTuningEnabled = true;

@@ -197,6 +197,7 @@ public class RobotContainer {
         driverController.a().onTrue(intake.stop());
         driverController.x().onTrue(intake.intakeEfficient());
         driverController.b().onTrue(intake.stow());
+        driverController.povDown().whileTrue(intake.reverse()).onFalse(intake.intakeEfficient());
 
         // Dashboard bindings
         SmartDashboard.putData("ZeroIntake", intake.zeroRoutine());

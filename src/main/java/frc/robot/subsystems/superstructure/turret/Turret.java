@@ -18,6 +18,7 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.PhysicsUtil;
+import frc.robot.util.PowerLogger;
 import lombok.Getter;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -30,6 +31,7 @@ import static frc.robot.subsystems.superstructure.turret.TurretConstants.*;
 public class Turret {
     private final TurretIO io;
     private final TurretInputsAutoLogged inputs = new TurretInputsAutoLogged();
+    private final PowerLogger powerLogger = new PowerLogger("Turret");
     private final EasyCRT easyCRT =
             new EasyCRT(new EasyCRTConfig(() -> inputs.encoder1Position, () -> inputs.encoder2Position)
                     .withCommonDriveGear(commonGearReduction, commonGearTeeth, cancoder1Teeth, cancoder2Teeth)
@@ -52,6 +54,7 @@ public class Turret {
     public void periodic() {
         io.updateInputs(inputs);
         Logger.processInputs("Turret", inputs);
+        powerLogger.log(inputs.statorCurrent, inputs.voltage);
 
         var crtStart = Timer.getFPGATimestamp();
         var crtResult = easyCRT.getAngleOptional();

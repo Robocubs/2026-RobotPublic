@@ -23,7 +23,7 @@ public final class IntakeConstants {
     public static final int numRollerMotors = 1;
     public static final double rollerReduction = 3.0;
     public static final int numExtensionMotors = 1;
-    public static final double extensionReduction = 12.0;
+    public static final double extensionReduction = 12.0 * 19.0 / 18.0;
     public static final Mass mass = Kilograms.of(5);
     public static final Distance distancePerRotation = Inches.of(Math.PI / 10.0 * 20.0);
 
@@ -42,6 +42,6 @@ public final class IntakeConstants {
 
     public static final Distance extendedPosition = Inches.of(12.0);
     public static final Distance partiallyExtendedPosition = Inches.of(4.0);
-    public static final Distance retractedPosition = Inches.of(2.0);
+    public static final Distance retractedPosition = Inches.of(3.0);
     public static final Distance extendedRollerActivationPosition = extendedPosition.minus(Inches.of(2.0));
 }

@@ -57,7 +57,7 @@ public class Superstructure extends SubsystemBase {
             new LoggedTunableMeasure<>("Superstructure/TurretAngle", Radians.of(0));
 
     private static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> indexerShootingVelocity =
-            new LoggedTunableMeasure<>("Superstructure/IndexerShootingVelocity", RadiansPerSecond.of(60));
+            new LoggedTunableMeasure<>("Superstructure/IndexerShootingVelocity", RadiansPerSecond.of(40));
     private static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> kickerShootingVelocity =
             new LoggedTunableMeasure<>("Superstructure/KickerShootingVelocity", RadiansPerSecond.of(120));
 
@@ -66,7 +66,7 @@ public class Superstructure extends SubsystemBase {
     private static final LoggedTunableMeasure<TimeUnit, Time> timeToScan =
             new LoggedTunableMeasure<>("Superstructure/TimeToScan", Seconds.of(10));
 
-    private static final BidirectionalDebouncer indexingDebouncer = new BidirectionalDebouncer(0.1, 2.0, true);
+    private static final BidirectionalDebouncer indexingDebouncer = new BidirectionalDebouncer(0.25, 3.0, true);
 
     private final RobotState robotState = RobotState.getInstance();
     private final Flywheel flywheel;
@@ -84,9 +84,10 @@ public class Superstructure extends SubsystemBase {
     public static enum SuperstructureState {
         STOP,
         TRACKING_HUB_FOR_POSE,
+        TRACKING_HUB_FOR_POSE_IDLE,
         SHOOTING_HUB,
         TRACKING_HUB_BEFORE_SHOOTING,
-        TRACKING_NEUTRAL,
+        TRACKING_BEFORE_FEEDING,
         FEEDING,
         TUNING,
         TUNING_WARMING_UP,
@@ -133,6 +134,14 @@ public class Superstructure extends SubsystemBase {
                 indexer.stop();
                 kicker.stop();
             }
+            case TRACKING_HUB_FOR_POSE_IDLE -> {
+                var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForTrackingPose();
+                flywheel.setVelocity(RadiansPerSecond.zero());
+                hood.setAngle(superstructureSetpoint.hoodAngle);
+                turret.setAngle(superstructureSetpoint.turretAngle);
+                indexer.stop();
+                kicker.stop();
+            }
             case SHOOTING_HUB -> {
                 var shouldIndex = indexingDebouncer.calculate(!indexingDebouncer.getBaseline());
                 var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForShooting();
@@ -158,7 +167,7 @@ public class Superstructure extends SubsystemBase {
                 indexer.stop();
                 kicker.stop();
             }
-            case TRACKING_NEUTRAL -> {
+            case TRACKING_BEFORE_FEEDING -> {
                 var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForPassing();
                 flywheel.setVelocity(superstructureSetpoint.flywheelVelocity);
                 hood.setAngle(superstructureSetpoint.hoodAngle);
@@ -254,7 +263,7 @@ public class Superstructure extends SubsystemBase {
                         scan())
                 .withOption(
                         () -> !robotState.inAllianceZone() && !robotState.onAllianceBump(),
-                        run(() -> applyState(SuperstructureState.TRACKING_NEUTRAL)))
+                        run(() -> applyState(SuperstructureState.TRACKING_HUB_FOR_POSE_IDLE)))
                 .withName("Superstructure/Default");
     }
 
@@ -297,11 +306,7 @@ public class Superstructure extends SubsystemBase {
 
     public Command shootWithTuning() {
         return run(() -> applyState(SuperstructureState.TUNING_WARMING_UP))
-                .until(() -> flywheel.isAtGoal()
-                        && hood.isAtGoal()
-                        && turret.isAtGoal()
-                        && robotState.getMatchState().getTimeToHubActive().lt(timeToShoot.get())
-                        && robotState.inAllianceZone())
+                .until(() -> flywheel.isAtGoal() && hood.isAtGoal() && turret.isAtGoal())
                 .andThen(run(() -> applyState(SuperstructureState.TUNING))
                         .until(() ->
                                 robotState.getMatchState().getTimeToHubActive().gt(timeToShoot.get())))
@@ -309,7 +314,7 @@ public class Superstructure extends SubsystemBase {
     }
 
     public Command feed() {
-        return run(() -> applyState(SuperstructureState.TRACKING_NEUTRAL))
+        return run(() -> applyState(SuperstructureState.TRACKING_BEFORE_FEEDING))
                 .until(() -> flywheel.isAtGoal() && hood.isAtGoal() && turret.isAtGoal())
                 .andThen(runOnce(() -> indexingDebouncer.reset(true)))
                 .andThen(run(() -> {
@@ -318,7 +323,7 @@ public class Superstructure extends SubsystemBase {
                             || turretPose.getY() < FieldConstants.blueHubRightThresholdY) {
                         applyState(SuperstructureState.FEEDING);
                     } else {
-                        applyState(SuperstructureState.TRACKING_NEUTRAL);
+                        applyState(SuperstructureState.TRACKING_BEFORE_FEEDING);
                     }
                 }))
                 .withName("Superstructure/Feed");

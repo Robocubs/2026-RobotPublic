@@ -9,6 +9,7 @@ package frc.robot.subsystems.superstructure.indexer;
 
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
+import frc.robot.util.PowerLogger;
 import org.littletonrobotics.junction.Logger;
 
 import static frc.robot.subsystems.superstructure.indexer.IndexerConstants.velocityTolerance;
@@ -16,6 +17,7 @@ import static frc.robot.subsystems.superstructure.indexer.IndexerConstants.veloc
 public class Indexer {
     private final IndexerIO io;
     private final IndexerInputsAutoLogged inputs = new IndexerInputsAutoLogged();
+    private final PowerLogger powerLogger = new PowerLogger("Indexer");
 
     public Indexer(IndexerIO io) {
         this.io = io;
@@ -24,6 +26,7 @@ public class Indexer {
     public void periodic() {
         io.updateInputs(inputs);
         Logger.processInputs("Indexer", inputs);
+        powerLogger.log(inputs.statorCurrent, inputs.voltage);
     }
 
     public void setOutput(double output) {

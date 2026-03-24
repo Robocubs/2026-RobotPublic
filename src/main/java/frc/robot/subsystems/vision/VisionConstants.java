@@ -36,11 +36,10 @@ public final class VisionConstants {
                     DriveConstants.maxSmoothAngularVelocity.get().times(1.1));
     public static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> maxTurretAngularVelocity =
             new LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity>(
-                    "Vision/MaxTurretAngularVelocity",
-                    DriveConstants.maxSmoothAngularVelocity.get().times(1.1));
+                    "Vision/MaxTurretAngularVelocity", RadiansPerSecond.of(Math.PI * 0.5));
 
     public static final double linearStdDevBaseline = 0.01; // Meters
-    public static final double angularStdDevBaseline = 0.001; // Radians
+    public static final double angularStdDevBaseline = 0.01; // Radians
 
     public static final SingleTargetMode singleTargetMode = SingleTargetMode.LOWEST_AMBIGUITY;
 

@@ -27,6 +27,7 @@ import frc.robot.RobotState.DriveMeasurement;
 import frc.robot.commands.DriveToPose;
 import frc.robot.subsystems.drive.DriveIO.DriveIOInputs;
 import frc.robot.subsystems.drive.controllers.PathController;
+import frc.robot.util.PowerLogger;
 import lombok.Getter;
 import org.littletonrobotics.junction.Logger;
 
@@ -46,6 +47,14 @@ public class Drive extends SubsystemBase {
     private final ModuleIOInputsAutoLogged frontRightModuleInputs = new ModuleIOInputsAutoLogged();
     private final ModuleIOInputsAutoLogged backLeftModuleInputs = new ModuleIOInputsAutoLogged();
     private final ModuleIOInputsAutoLogged backRightModuleInputs = new ModuleIOInputsAutoLogged();
+    private final PowerLogger frontLeftDrivePowerLogger = new PowerLogger("FLDrive");
+    private final PowerLogger frontRightDrivePowerLogger = new PowerLogger("FRDrive");
+    private final PowerLogger backLeftDrivePowerLogger = new PowerLogger("BLDrive");
+    private final PowerLogger backRightDrivePowerLogger = new PowerLogger("BRDrive");
+    private final PowerLogger frontLeftSteerPowerLogger = new PowerLogger("FLSteer");
+    private final PowerLogger frontRightSteerPowerLogger = new PowerLogger("FRSteer");
+    private final PowerLogger backLeftSteerPowerLogger = new PowerLogger("BLSteer");
+    private final PowerLogger backRightSteerPowerLogger = new PowerLogger("BRSteer");
     private final RobotState robotState = RobotState.getInstance();
     private final PathController choreoTrajectoryController = new PathController();
 
@@ -76,6 +85,15 @@ public class Drive extends SubsystemBase {
         Logger.processInputs("Module/FR", frontRightModuleInputs);
         Logger.processInputs("Module/BL", backLeftModuleInputs);
         Logger.processInputs("Module/BR", backRightModuleInputs);
+
+        frontLeftDrivePowerLogger.log(frontLeftModuleInputs.driveStatorCurrent, frontLeftModuleInputs.driveVoltage);
+        frontRightDrivePowerLogger.log(frontRightModuleInputs.driveStatorCurrent, frontRightModuleInputs.driveVoltage);
+        backLeftDrivePowerLogger.log(backLeftModuleInputs.driveStatorCurrent, backLeftModuleInputs.driveVoltage);
+        backRightDrivePowerLogger.log(backRightModuleInputs.driveStatorCurrent, backRightModuleInputs.driveVoltage);
+        frontLeftSteerPowerLogger.log(frontLeftModuleInputs.steerStatorCurrent, frontLeftModuleInputs.steerVoltage);
+        frontRightSteerPowerLogger.log(frontRightModuleInputs.steerStatorCurrent, frontRightModuleInputs.steerVoltage);
+        backLeftSteerPowerLogger.log(backLeftModuleInputs.steerStatorCurrent, backLeftModuleInputs.steerVoltage);
+        backRightSteerPowerLogger.log(backRightModuleInputs.steerStatorCurrent, backRightModuleInputs.steerVoltage);
 
         var measurements = Stream.of(driveInputs.swerve)
                 .map(input -> new RobotState.DriveMeasurement(

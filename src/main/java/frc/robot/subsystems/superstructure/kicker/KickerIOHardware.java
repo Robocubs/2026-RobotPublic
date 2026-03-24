@@ -77,7 +77,7 @@ public class KickerIOHardware implements KickerIO {
                         .withKD(kD.get()))
                 .withCurrentLimits(new CurrentLimitsConfigs()
                         .withStatorCurrentLimit(Amps.of(120))
-                        .withSupplyCurrentLimit(Amps.of(60))
+                        .withSupplyCurrentLimit(Amps.of(50))
                         .withSupplyCurrentLowerLimit(Amps.of(40)));
         PhoenixUtil.tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
 

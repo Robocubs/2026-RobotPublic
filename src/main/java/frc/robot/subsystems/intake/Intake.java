@@ -21,6 +21,8 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.RobotState;
 import frc.robot.commands.characterization.SysIdCommandSet;
+import frc.robot.subsystems.drive.DriveConstants;
+import frc.robot.util.PowerLogger;
 import frc.robot.util.tuning.LoggedTunableMeasure;
 import frc.robot.util.tuning.LoggedTunableNumber;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -31,12 +33,14 @@ import static edu.wpi.first.wpilibj2.command.Commands.sequence;
 
 public class Intake extends SubsystemBase {
     private static final LoggedTunableNumber zeroRoutineOutput =
-            new LoggedTunableNumber("Intake/ZeroRoutineOutput", 0.1);
+            new LoggedTunableNumber("Intake/ZeroRoutineOutput", 0.2);
     private static final LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity> zeroVelocityTolerance =
             new LoggedTunableMeasure<>("Intake/ZeroVelocityTolerance", MetersPerSecond.of(0.01));
 
     private final IntakeIO io;
     private final IntakeInputsAutoLogged inputs = new IntakeInputsAutoLogged();
+    private final PowerLogger leaderPowerLogger = new PowerLogger("IntakeLeader");
+    private final PowerLogger followerPowerLogger = new PowerLogger("IntakeFollower");
 
     private @AutoLogOutput Distance extensionGoal = IntakeConstants.minimumExtension;
 
@@ -50,6 +54,8 @@ public class Intake extends SubsystemBase {
     public void periodic() {
         io.updateInputs(inputs);
         Logger.processInputs("Intake", inputs);
+        leaderPowerLogger.log(inputs.leaderStatorCurrent, inputs.leaderVoltage);
+        followerPowerLogger.log(inputs.followerStatorCurrent, inputs.followerVoltage);
     }
 
     private void runSetpoint(Distance extension, double rollerOutput) {
@@ -74,11 +80,17 @@ public class Intake extends SubsystemBase {
                 .unless(() -> inputs.extensionPosition.gt(IntakeConstants.extendedRollerActivationPosition))
                 .andThen(run(() -> {
                     // Run intake if robot is moving toward intake or spinning
+                    double rollerOutput;
                     var robotVelocity = RobotState.getInstance().getTargetRobotVelocity();
-                    var rollerOutput = debouncer.calculate(robotVelocity.vxMetersPerSecond < -Constants.epsilon
-                                    || !MathUtil.isNear(0, robotVelocity.omegaRadiansPerSecond, 0.1))
-                            ? .95
-                            : 0;
+                    if (!debouncer.calculate(robotVelocity.vxMetersPerSecond < Constants.epsilon
+                            || !MathUtil.isNear(0, robotVelocity.omegaRadiansPerSecond, 0.1))) {
+                        rollerOutput = 0.0;
+                    } else if (robotVelocity.vxMetersPerSecond > -DriveConstants.maxSpeed.in(MetersPerSecond) / 2) {
+                        rollerOutput = 0.5;
+                    } else {
+                        var maxVelocity = DriveConstants.maxSpeed.in(MetersPerSecond);
+                        rollerOutput = Math.abs(robotVelocity.vxMetersPerSecond) / maxVelocity;
+                    }
 
                     runSetpoint(extensionGoal, rollerOutput);
                 }))
@@ -86,11 +98,11 @@ public class Intake extends SubsystemBase {
     }
 
     public Command intake() {
-        return run(() -> runSetpoint(IntakeConstants.extendedPosition, .95)).withName("Intake/Intake");
+        return run(() -> runSetpoint(IntakeConstants.extendedPosition, 1.0)).withName("Intake/Intake");
     }
 
     public Command reverse() {
-        return run(() -> runSetpoint(IntakeConstants.extendedPosition, -.95)).withName("Intake/Reverse");
+        return run(() -> runSetpoint(IntakeConstants.extendedPosition, -1.0)).withName("Intake/Reverse");
     }
 
     public Command stow() {
@@ -99,9 +111,10 @@ public class Intake extends SubsystemBase {
 
     public Command agitate() {
         return sequence(
-                        run(() -> runSetpoint(IntakeConstants.partiallyExtendedPosition, .95))
-                                .until(() -> isAtExtensionGoal()),
-                        run(() -> runSetpoint(IntakeConstants.extendedPosition, .95))
+                        run(() -> runSetpoint(IntakeConstants.partiallyExtendedPosition, 0.5))
+                                .until(() -> isAtExtensionGoal())
+                                .withTimeout(1.0),
+                        run(() -> runSetpoint(IntakeConstants.extendedPosition, 0.5))
                                 .until(() -> isAtExtensionGoal())
                                 .withTimeout(1.0))
                 .repeatedly();
@@ -121,6 +134,7 @@ public class Intake extends SubsystemBase {
                 .until(() -> debouncer.calculate(
                         inputs.extensionVelocity.isNear(MetersPerSecond.zero(), zeroVelocityTolerance.get())))
                 .andThen(runOnce(() -> io.setExtensionEncoderPosition(IntakeConstants.maximumExtension)))
+                .withTimeout(3.0)
                 .withInterruptBehavior(Command.InterruptionBehavior.kCancelIncoming)
                 .withName("Intake/ZeroRoutine");
     }

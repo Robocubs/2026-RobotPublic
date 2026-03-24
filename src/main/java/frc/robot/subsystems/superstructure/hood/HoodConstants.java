@@ -28,5 +28,5 @@ public final class HoodConstants {
             new LoggedTunableMeasure<>("Hood/EncoderOffset", Radians.of(0.0));
 
     public static final LoggedTunableMeasure<AngleUnit, Angle> angleTolerance =
-            new LoggedTunableMeasure<>("Hood/AngleTolerance", Radians.of(0.02));
+            new LoggedTunableMeasure<>("Hood/AngleTolerance", Radians.of(0.04));
 }

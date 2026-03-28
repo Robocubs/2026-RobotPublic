@@ -95,7 +95,7 @@ public class IntakeIOHardware implements IntakeIO {
     private final StatusSignal<Temperature> extensionTemperatureSignal;
     private final StatusSignal<Double> extensionClosedLoopReferenceSignal;
 
-    private final DutyCycleOut rollerDutyCycleControlRequest = new DutyCycleOut(0.0);
+    private final DutyCycleOut rollerDutyCycleControlRequest = new DutyCycleOut(0.0).withEnableFOC(false);
     private final DutyCycleOut extensionDutyCycleControlRequest = new DutyCycleOut(0.0);
     private final MotionMagicVoltage extensionMotionMagicControlRequest = new MotionMagicVoltage(0.0).withSlot(0);
     private final PositionVoltage extensionPositionControlRequest = new PositionVoltage(0.0).withSlot(1);

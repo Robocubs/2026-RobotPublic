@@ -39,7 +39,7 @@ import static frc.robot.subsystems.superstructure.flywheel.FlywheelConstants.*;
 
 public class FlywheelIOHardware implements FlywheelIO {
     private static final LoggedTunableBoolean useTorqueCurrent =
-            new LoggedTunableBoolean("Flywheel/UseTorqueCurrent", true);
+            new LoggedTunableBoolean("Flywheel/UseTorqueCurrent", false);
     private static final LoggedTunableNumber kS = new LoggedTunableNumber("Flywheel/kS", 0.25797);
     private static final LoggedTunableNumber kV = new LoggedTunableNumber("Flywheel/kV", 0.12202);
     private static final LoggedTunableNumber kA = new LoggedTunableNumber("Flywheel/kA", 0.0076363);
@@ -71,10 +71,11 @@ public class FlywheelIOHardware implements FlywheelIO {
     private final StatusSignal<Temperature> followerTemperatureSignal;
     private final StatusSignal<Double> closedLoopReferenceSignal;
 
-    private final VelocityVoltage velocityControlRequest = new VelocityVoltage(0.0).withSlot(0);
+    private final VelocityVoltage velocityControlRequest =
+            new VelocityVoltage(0.0).withSlot(0).withEnableFOC(false);
     private final VelocityTorqueCurrentFOC velocityTorqueCurrentControlRequest =
             new VelocityTorqueCurrentFOC(0.0).withSlot(1);
-    private final VoltageOut voltageOut = new VoltageOut(0.0);
+    private final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(false);
 
     public FlywheelIOHardware() {
         this.leaderMotor = new TalonFX(leaderId, PhoenixCANBus.canivore());

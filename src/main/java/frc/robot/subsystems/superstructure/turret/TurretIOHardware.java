@@ -69,7 +69,7 @@ public class TurretIOHardware implements TurretIO {
 
         motorConfig = new TalonFXConfiguration()
                 .withMotorOutput(new MotorOutputConfigs()
-                        .withNeutralMode(NeutralModeValue.Brake)
+                        .withNeutralMode(NeutralModeValue.Coast)
                         .withInverted(motorInvertedValue))
                 .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(reduction))
                 .withSlot0(new Slot0Configs()

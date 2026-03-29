@@ -295,9 +295,9 @@ public class IntakeIOHardware implements IntakeIO {
     public void setExtensionPosition(Distance position) {
         var rotations = position.in(Meters) / distancePerRotation.in(Meters) * extensionReduction;
         if (useMotionMagic.get()) {
-            extensionMotor.setControl(extensionMotionMagicControlRequest.withPosition(Rotations.of(rotations)));
+            extensionMotor.setControl(extensionMotionMagicControlRequest.withPosition(rotations));
         } else {
-            extensionMotor.setControl(extensionPositionControlRequest.withPosition(Rotations.of(rotations)));
+            extensionMotor.setControl(extensionPositionControlRequest.withPosition(rotations));
         }
     }
 

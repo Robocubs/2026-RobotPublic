@@ -138,8 +138,8 @@ public class FlywheelIOHardware implements FlywheelIO {
 
         signals.setUpdateFrequencyForAll(100.0);
 
-        // leaderMotor.optimizeBusUtilization();
-        // followerMotor.optimizeBusUtilization();
+        leaderMotor.optimizeBusUtilization();
+        followerMotor.optimizeBusUtilization();
     }
 
     @Override
@@ -160,7 +160,7 @@ public class FlywheelIOHardware implements FlywheelIO {
         inputs.followerSupplyCurrent = followerSupplyCurrentSignal.getValue();
         inputs.followerTemperature = followerTemperatureSignal.getValueAsDouble();
 
-        inputs.closedLoopReference = closedLoopReferenceSignal.getValue();
+        inputs.closedLoopReference = RotationsPerSecond.of(closedLoopReferenceSignal.getValue());
 
         LoggedTunableValue.ifChanged(
                 0,

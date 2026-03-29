@@ -113,6 +113,7 @@ public class IndexerIOHardware implements IndexerIO {
         inputs.statorCurrent = statorCurrentSignal.getValue();
         inputs.supplyCurrent = supplyCurrentSignal.getValue();
         inputs.temperature = temperatureSignal.getValueAsDouble();
+        inputs.closedLoopReference = RotationsPerSecond.of(closedLoopReferenceSignal.getValue());
 
         LoggedTunableValue.ifChanged(
                 0,

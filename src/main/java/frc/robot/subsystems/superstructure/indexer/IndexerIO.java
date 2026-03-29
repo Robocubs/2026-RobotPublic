@@ -24,6 +24,7 @@ public interface IndexerIO {
         public Current statorCurrent = Amps.zero();
         public Current supplyCurrent = Amps.zero();
         public double temperature = 0.0;
+        public AngularVelocity closedLoopReference = RadiansPerSecond.zero();
     }
 
     public default void updateInputs(IndexerInputs inputs) {}

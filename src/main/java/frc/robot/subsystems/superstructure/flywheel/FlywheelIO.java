@@ -32,7 +32,7 @@ public interface FlywheelIO {
         public Current followerSupplyCurrent = Amps.zero();
         public double followerTemperature = 0.0;
 
-        public double closedLoopReference = 0.0;
+        public AngularVelocity closedLoopReference = RadiansPerSecond.zero();
     }
 
     public default void updateInputs(FlywheelInputs inputs) {}

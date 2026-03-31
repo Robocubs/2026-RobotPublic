@@ -22,7 +22,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.FieldConstants;
 import frc.robot.RobotState;
 import frc.robot.commands.ContinuousSwitchCommand;
 import frc.robot.commands.characterization.SysIdCommandSet;
@@ -125,12 +124,16 @@ public class Superstructure extends SubsystemBase {
     public void applyState(SuperstructureState state) {
         this.state = state;
 
+        if (state != SuperstructureState.TRACKING_BEFORE_FEEDING && state != SuperstructureState.FEEDING) {
+            superstructureSetpointCalculator.resetPassingTarget();
+        }
+
         switch (state) {
             case TRACKING_HUB_FOR_POSE -> {
                 var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForTrackingPose();
                 flywheel.setVelocity(superstructureSetpoint.flywheelVelocity);
                 hood.setAngle(superstructureSetpoint.hoodAngle);
-                turret.setAngle(superstructureSetpoint.turretAngle);
+                turret.setAngle(superstructureSetpoint.turretAngle, superstructureSetpoint.turretVelocity);
                 indexer.stop();
                 kicker.stop();
             }
@@ -138,7 +141,7 @@ public class Superstructure extends SubsystemBase {
                 var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForTrackingPose();
                 flywheel.setVelocity(RadiansPerSecond.zero());
                 hood.setAngle(superstructureSetpoint.hoodAngle);
-                turret.setAngle(superstructureSetpoint.turretAngle);
+                turret.setAngle(superstructureSetpoint.turretAngle, superstructureSetpoint.turretVelocity);
                 indexer.stop();
                 kicker.stop();
             }
@@ -147,7 +150,7 @@ public class Superstructure extends SubsystemBase {
                 var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForShooting();
                 flywheel.setVelocity(superstructureSetpoint.flywheelVelocity);
                 hood.setAngle(superstructureSetpoint.hoodAngle);
-                turret.setAngle(superstructureSetpoint.turretAngle);
+                turret.setAngle(superstructureSetpoint.turretAngle, superstructureSetpoint.turretVelocity);
                 if (turret.isWrapping()) {
                     indexer.stop();
                     kicker.stop();
@@ -163,7 +166,7 @@ public class Superstructure extends SubsystemBase {
                 var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForShooting();
                 flywheel.setVelocity(superstructureSetpoint.flywheelVelocity);
                 hood.setAngle(superstructureSetpoint.hoodAngle);
-                turret.setAngle(superstructureSetpoint.turretAngle);
+                turret.setAngle(superstructureSetpoint.turretAngle, superstructureSetpoint.turretVelocity);
                 indexer.stop();
                 kicker.stop();
             }
@@ -171,7 +174,7 @@ public class Superstructure extends SubsystemBase {
                 var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForPassing();
                 flywheel.setVelocity(superstructureSetpoint.flywheelVelocity);
                 hood.setAngle(superstructureSetpoint.hoodAngle);
-                turret.setAngle(superstructureSetpoint.turretAngle);
+                turret.setAngle(superstructureSetpoint.turretAngle, superstructureSetpoint.turretVelocity);
                 indexer.stop();
                 kicker.stop();
             }
@@ -180,7 +183,7 @@ public class Superstructure extends SubsystemBase {
                 var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForPassing();
                 flywheel.setVelocity(superstructureSetpoint.flywheelVelocity);
                 hood.setAngle(superstructureSetpoint.hoodAngle);
-                turret.setAngle(superstructureSetpoint.turretAngle);
+                turret.setAngle(superstructureSetpoint.turretAngle, superstructureSetpoint.turretVelocity);
                 if (turret.isWrapping()) {
                     indexer.stop();
                     kicker.stop();
@@ -318,12 +321,10 @@ public class Superstructure extends SubsystemBase {
                 .until(() -> flywheel.isAtGoal() && hood.isAtGoal() && turret.isAtGoal())
                 .andThen(runOnce(() -> indexingDebouncer.reset(true)))
                 .andThen(run(() -> {
-                    var turretPose = robotState.getTurretPose();
-                    if (turretPose.getY() > FieldConstants.blueHubLeftThresholdY
-                            || turretPose.getY() < FieldConstants.blueHubRightThresholdY) {
-                        applyState(SuperstructureState.FEEDING);
-                    } else {
+                    if (superstructureSetpointCalculator.isPassingBlocked()) {
                         applyState(SuperstructureState.TRACKING_BEFORE_FEEDING);
+                    } else {
+                        applyState(SuperstructureState.FEEDING);
                     }
                 }))
                 .withName("Superstructure/Feed");

@@ -43,7 +43,7 @@ public class HoodIOHardware implements HoodIO {
                 .withMagnetSensor(new MagnetSensorConfigs()
                         .withMagnetOffset(encoderOffset.get())
                         .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
-                        .withAbsoluteSensorDiscontinuityPoint(Rotations.of(0.95)));
+                        .withAbsoluteSensorDiscontinuityPoint(Rotations.of(0.99)));
         PhoenixUtil.tryUntilOk(() -> cancoder.getConfigurator().apply(cancoderConfig));
 
         positionSignal = cancoder.getAbsolutePosition();

@@ -35,13 +35,21 @@ public interface IntakeIO {
         public Current followerSupplyCurrent = Amps.zero();
         public double followerTemperature = 0.0;
 
-        public Distance extensionPosition = Meters.zero();
-        public LinearVelocity extensionVelocity = MetersPerSecond.zero();
-        public Voltage extensionVoltage = Volts.zero();
-        public Current extensionStatorCurrent = Amps.zero();
-        public Current extensionSupplyCurrent = Amps.zero();
-        public double extensionTemperature = 0.0;
-        public Distance extensionClosedLoopReference = Meters.zero();
+        public Distance extension1Position = Meters.zero();
+        public LinearVelocity extension1Velocity = MetersPerSecond.zero();
+        public Voltage extension1Voltage = Volts.zero();
+        public Current extension1StatorCurrent = Amps.zero();
+        public Current extension1SupplyCurrent = Amps.zero();
+        public double extension1Temperature = 0.0;
+        public Distance extension1ClosedLoopReference = Meters.zero();
+
+        public Distance extension2Position = Meters.zero();
+        public LinearVelocity extension2Velocity = MetersPerSecond.zero();
+        public Voltage extension2Voltage = Volts.zero();
+        public Current extension2StatorCurrent = Amps.zero();
+        public Current extension2SupplyCurrent = Amps.zero();
+        public double extension2Temperature = 0.0;
+        public Distance extension2ClosedLoopReference = Meters.zero();
     }
 
     public default void updateInputs(IntakeInputs inputs) {}

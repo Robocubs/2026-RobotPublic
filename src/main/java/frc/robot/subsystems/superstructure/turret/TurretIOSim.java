@@ -53,6 +53,7 @@ public class TurretIOSim extends TurretIOHardware {
             encoder2SimState.setSupplyVoltage(RobotController.getBatteryVoltage());
 
             simRobotState.setTurretAngle(position);
+            simRobotState.setTurretVelocity(velocity);
         });
     }
 

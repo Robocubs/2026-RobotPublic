@@ -47,7 +47,7 @@ public class Intake extends SubsystemBase {
     public Intake(IntakeIO io) {
         this.io = io;
 
-        RobotState.getInstance().setHopperExtensionSupplier(() -> inputs.extensionPosition);
+        RobotState.getInstance().setHopperExtensionSupplier(() -> inputs.extension1Position);
     }
 
     @Override
@@ -70,14 +70,17 @@ public class Intake extends SubsystemBase {
     }
 
     public boolean isAtPosition(Distance position) {
-        return inputs.extensionPosition.isNear(position, IntakeConstants.extensionTolerance);
+        return inputs.extension1Position.isNear(position, IntakeConstants.extensionTolerance)
+                && inputs.extension2Position.isNear(position, IntakeConstants.extensionTolerance);
     }
 
     public Command intakeEfficient() {
         var debouncer = new Debouncer(1.0, DebounceType.kFalling);
         return run(() -> runSetpoint(IntakeConstants.extendedPosition, 0.0))
-                .until(() -> inputs.extensionPosition.gt(IntakeConstants.extendedRollerActivationPosition))
-                .unless(() -> inputs.extensionPosition.gt(IntakeConstants.extendedRollerActivationPosition))
+                .until(() -> inputs.extension1Position.gt(IntakeConstants.extendedRollerActivationPosition)
+                        && inputs.extension2Position.gt(IntakeConstants.extendedRollerActivationPosition))
+                .unless(() -> inputs.extension1Position.gt(IntakeConstants.extendedRollerActivationPosition)
+                        && inputs.extension2Position.gt(IntakeConstants.extendedRollerActivationPosition))
                 .andThen(run(() -> {
                     // Run intake if robot is moving toward intake or spinning
                     double rollerOutput;
@@ -132,7 +135,7 @@ public class Intake extends SubsystemBase {
         return runOnce(() -> debouncer.calculate(false))
                 .andThen(run(() -> io.setExtensionOutput(zeroRoutineOutput.get(), true)))
                 .until(() -> debouncer.calculate(
-                        inputs.extensionVelocity.isNear(MetersPerSecond.zero(), zeroVelocityTolerance.get())))
+                        inputs.extension1Velocity.isNear(MetersPerSecond.zero(), zeroVelocityTolerance.get())))
                 .andThen(runOnce(() -> io.setExtensionEncoderPosition(IntakeConstants.maximumExtension)))
                 .withTimeout(3.0)
                 .withInterruptBehavior(Command.InterruptionBehavior.kCancelIncoming)
@@ -156,12 +159,12 @@ public class Intake extends SubsystemBase {
         Function<Distance, Command> goToStartingPosition = position -> runOnce(() -> debouncer.calculate(false))
                 .andThen(run(() -> io.setExtensionPosition(position)))
                 .until(() -> debouncer.calculate(
-                        inputs.extensionPosition.isNear(position, IntakeConstants.extensionTolerance)));
+                        inputs.extension1Position.isNear(position, IntakeConstants.extensionTolerance)));
 
         return SysIdCommandSet.builder()
                 .sysIdRoutine(routine)
-                .untilForward(() -> inputs.extensionPosition.gt(maxPosition))
-                .untilReverse(() -> inputs.extensionPosition.lt(minPosition))
+                .untilForward(() -> inputs.extension1Position.gt(maxPosition))
+                .untilReverse(() -> inputs.extension1Position.lt(minPosition))
                 .beforeStartingForward(() -> goToStartingPosition.apply(minPosition))
                 .beforeStartingReverse(() -> goToStartingPosition.apply(maxPosition))
                 .finallyDo(() -> io.stop())

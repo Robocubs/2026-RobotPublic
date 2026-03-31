@@ -9,7 +9,6 @@ package frc.robot.simulation;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -17,7 +16,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Time;
@@ -58,9 +57,6 @@ public class SimRobotState {
     private static final AngularVelocity minIndexerVelocityToShoot = RotationsPerSecond.of(0.1);
     private static final AngularVelocity minKickerVelocityToShoot = RotationsPerSecond.of(0.1);
 
-    private static final InterpolatingDoubleTreeMap flywheelEfficiency =
-            InterpolatingDoubleTreeMap.ofEntries(Map.entry(2.0, 0.85), Map.entry(3.75, 1.0), Map.entry(6.0, 1.0));
-
     private final ConcurrentTimeInterpolatableBuffer<Pose2d> poseBuffer =
             ConcurrentTimeInterpolatableBuffer.createBuffer(RobotState.lookbackTimeSeconds);
     private final List<Consumer<Pose2d>> poseResetConsumers = new ArrayList<>();
@@ -72,6 +68,7 @@ public class SimRobotState {
     private IntakeSimulation intakeSim;
 
     private @Setter Angle turretAngle = Radians.zero();
+    private @Setter AngularVelocity turretVelocity = RadiansPerSecond.zero();
     private @Setter Angle hoodAngle = Radians.zero();
     private @Setter AngularVelocity flywheelVelocity = RadiansPerSecond.zero();
     private @Setter AngularVelocity kickerVelocity = RadiansPerSecond.zero();
@@ -167,7 +164,7 @@ public class SimRobotState {
                                     .transformBy(TurretConstants.robotToTurret2d)
                                     .getTranslation(),
                             Translation2d.kZero, // Math is wrong, so just use turret pose for robot pose
-                            swerveDriveSim.getDriveTrainSimulatedChassisSpeedsFieldRelative(),
+                            calculateTurretFieldSpeeds(),
                             swerveDriveSim
                                     .getSimulatedDriveTrainPose()
                                     .getRotation()
@@ -183,12 +180,7 @@ public class SimRobotState {
                                                     + FlywheelConstants.rollerRadius.in(Meters)
                                                             * FlywheelConstants.rollerReduction)
                                             * flywheelVelocity.in(RadiansPerSecond)
-                                            * 0.5
-                                            * flywheelEfficiency.get(RobotState.getInstance()
-                                                    .getDistanceToHub(swerveDriveSim
-                                                            .getSimulatedDriveTrainPose()
-                                                            .transformBy(TurretConstants.robotToTurret2d))
-                                                    .in(Meters))),
+                                            * 0.5),
                             Degrees.of(90).minus(hoodAngle)));
             lastShotOrIdleTimestamp = timestamp;
         } else if (!isShooting) {
@@ -205,6 +197,19 @@ public class SimRobotState {
         Logger.recordOutput("Simulation/TurretPose", turretPose);
         Logger.recordOutput("Simulation/Fuel", SimulatedArena.getInstance().getGamePiecesArrayByType("Fuel"));
         Logger.recordOutput("Simulation/FuelHeld", intakeSim.getGamePiecesAmount());
+    }
+
+    private ChassisSpeeds calculateTurretFieldSpeeds() {
+        var robotSpeeds = swerveDriveSim.getDriveTrainSimulatedChassisSpeedsFieldRelative();
+        var robotHeading = swerveDriveSim.getSimulatedDriveTrainPose().getRotation();
+
+        var turretOffsetField = TurretConstants.robotToTurret2d.getTranslation().rotateBy(robotHeading);
+
+        var omega = robotSpeeds.omegaRadiansPerSecond;
+        var vx = robotSpeeds.vxMetersPerSecond - omega * turretOffsetField.getY();
+        var vy = robotSpeeds.vyMetersPerSecond + omega * turretOffsetField.getX();
+
+        return new ChassisSpeeds(vx, vy, omega + turretVelocity.in(RadiansPerSecond));
     }
 
     public void addPoseMeasurement(double timestamp, Pose2d pose) {

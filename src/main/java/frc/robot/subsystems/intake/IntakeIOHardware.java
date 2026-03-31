@@ -68,10 +68,12 @@ public class IntakeIOHardware implements IntakeIO {
 
     protected final TalonFX leaderMotor;
     protected final TalonFX followerMotor;
-    protected final TalonFXS extensionMotor;
+    protected final TalonFXS extensionMotor1;
+    protected final TalonFXS extensionMotor2;
 
     private final TalonFXConfiguration rollerConfig;
-    private final TalonFXSConfiguration extensionConfig;
+    private final TalonFXSConfiguration extension1Config;
+    private final TalonFXSConfiguration extension2Config;
 
     private final StatusSignalCollection signals = new StatusSignalCollection();
     private final StatusSignal<Angle> leaderPositionSignal;
@@ -87,13 +89,21 @@ public class IntakeIOHardware implements IntakeIO {
     private final StatusSignal<Current> followerSupplyCurrentSignal;
     private final StatusSignal<Temperature> followerTemperatureSignal;
 
-    private final StatusSignal<Angle> extensionPositionSignal;
-    private final StatusSignal<AngularVelocity> extensionVelocitySignal;
-    private final StatusSignal<Voltage> extensionVoltageSignal;
-    private final StatusSignal<Current> extensionStatorCurrentSignal;
-    private final StatusSignal<Current> extensionSupplyCurrentSignal;
-    private final StatusSignal<Temperature> extensionTemperatureSignal;
-    private final StatusSignal<Double> extensionClosedLoopReferenceSignal;
+    private final StatusSignal<Angle> extension1PositionSignal;
+    private final StatusSignal<AngularVelocity> extension1VelocitySignal;
+    private final StatusSignal<Voltage> extension1VoltageSignal;
+    private final StatusSignal<Current> extension1StatorCurrentSignal;
+    private final StatusSignal<Current> extension1SupplyCurrentSignal;
+    private final StatusSignal<Temperature> extension1TemperatureSignal;
+    private final StatusSignal<Double> extension1ClosedLoopReferenceSignal;
+
+    private final StatusSignal<Angle> extension2PositionSignal;
+    private final StatusSignal<AngularVelocity> extension2VelocitySignal;
+    private final StatusSignal<Voltage> extension2VoltageSignal;
+    private final StatusSignal<Current> extension2StatorCurrentSignal;
+    private final StatusSignal<Current> extension2SupplyCurrentSignal;
+    private final StatusSignal<Temperature> extension2TemperatureSignal;
+    private final StatusSignal<Double> extension2ClosedLoopReferenceSignal;
 
     private final DutyCycleOut rollerDutyCycleControlRequest = new DutyCycleOut(0.0).withEnableFOC(false);
     private final DutyCycleOut extensionDutyCycleControlRequest = new DutyCycleOut(0.0);
@@ -105,13 +115,14 @@ public class IntakeIOHardware implements IntakeIO {
         leaderMotor = new TalonFX(leaderMotorId, PhoenixCANBus.canivore());
         followerMotor = new TalonFX(followerMotorId, PhoenixCANBus.canivore());
 
-        extensionMotor = new TalonFXS(extensionMotorId, PhoenixCANBus.canivore());
+        extensionMotor1 = new TalonFXS(extensionMotor1Id, PhoenixCANBus.canivore());
+        extensionMotor2 = new TalonFXS(extensionMotor2Id, PhoenixCANBus.canivore());
 
-        extensionConfig = new TalonFXSConfiguration()
+        extension1Config = new TalonFXSConfiguration()
                 .withCommutation(new CommutationConfigs().withMotorArrangement(MotorArrangementValue.Minion_JST))
                 .withMotorOutput(new MotorOutputConfigs()
                         .withNeutralMode(NeutralModeValue.Coast)
-                        .withInverted(IntakeConstants.extensionMotorInvertedValue))
+                        .withInverted(IntakeConstants.extension1MotorInvertedValue))
                 .withClosedLoopGeneral(new ClosedLoopGeneralConfigs().withContinuousWrap(false))
                 .withMotionMagic(new MotionMagicConfigs()
                         .withMotionMagicCruiseVelocity(motionMagicMaxVelocity.get())
@@ -144,7 +155,45 @@ public class IntakeIOHardware implements IntakeIO {
                         .withSupplyCurrentLimit(Amps.of(30))
                         .withSupplyCurrentLowerLimit(30));
 
-        PhoenixUtil.tryUntilOk(() -> extensionMotor.getConfigurator().apply(extensionConfig));
+        extension2Config = new TalonFXSConfiguration()
+                .withCommutation(new CommutationConfigs().withMotorArrangement(MotorArrangementValue.Minion_JST))
+                .withMotorOutput(new MotorOutputConfigs()
+                        .withNeutralMode(NeutralModeValue.Coast)
+                        .withInverted(IntakeConstants.extension2MotorInvertedValue))
+                .withClosedLoopGeneral(new ClosedLoopGeneralConfigs().withContinuousWrap(false))
+                .withMotionMagic(new MotionMagicConfigs()
+                        .withMotionMagicCruiseVelocity(motionMagicMaxVelocity.get())
+                        .withMotionMagicAcceleration(motionMagicMaxAcceleration.get())
+                        .withMotionMagicExpo_kV(extensionKV.get())
+                        .withMotionMagicExpo_kA(extensionKA.get()))
+                .withSlot0(new Slot0Configs()
+                        .withKG(extensionKG.get())
+                        .withKS(extensionKS.get())
+                        .withKV(extensionKV.get())
+                        .withKA(extensionKA.get())
+                        .withKP(motionMagicKP.get())
+                        .withKD(motionMagicKD.get()))
+                .withSlot1(new Slot1Configs()
+                        .withKG(extensionKG.get())
+                        .withKS(extensionKS.get())
+                        .withKV(extensionKV.get())
+                        .withKA(extensionKA.get())
+                        .withKP(extensionKP.get())
+                        .withKD(extensionKD.get()))
+                .withSoftwareLimitSwitch(new SoftwareLimitSwitchConfigs()
+                        .withForwardSoftLimitEnable(true)
+                        .withForwardSoftLimitThreshold(
+                                maximumExtension.in(Meters) / distancePerRotation.in(Meters) * extensionReduction)
+                        .withReverseSoftLimitEnable(true)
+                        .withReverseSoftLimitThreshold(
+                                minimumExtension.in(Meters) / distancePerRotation.in(Meters) * extensionReduction))
+                .withCurrentLimits(new CurrentLimitsConfigs()
+                        .withStatorCurrentLimit(Amps.of(40))
+                        .withSupplyCurrentLimit(Amps.of(30))
+                        .withSupplyCurrentLowerLimit(30));
+
+        PhoenixUtil.tryUntilOk(() -> extensionMotor1.getConfigurator().apply(extension1Config));
+        PhoenixUtil.tryUntilOk(() -> extensionMotor2.getConfigurator().apply(extension2Config));
 
         rollerConfig = new TalonFXConfiguration()
                 .withMotorOutput(new MotorOutputConfigs()
@@ -174,13 +223,21 @@ public class IntakeIOHardware implements IntakeIO {
         followerSupplyCurrentSignal = followerMotor.getSupplyCurrent();
         followerTemperatureSignal = followerMotor.getDeviceTemp();
 
-        extensionPositionSignal = extensionMotor.getPosition();
-        extensionVelocitySignal = extensionMotor.getRotorVelocity();
-        extensionVoltageSignal = extensionMotor.getMotorVoltage();
-        extensionStatorCurrentSignal = extensionMotor.getStatorCurrent();
-        extensionSupplyCurrentSignal = extensionMotor.getSupplyCurrent();
-        extensionTemperatureSignal = extensionMotor.getDeviceTemp();
-        extensionClosedLoopReferenceSignal = extensionMotor.getClosedLoopReference();
+        extension1PositionSignal = extensionMotor1.getPosition();
+        extension1VelocitySignal = extensionMotor1.getRotorVelocity();
+        extension1VoltageSignal = extensionMotor1.getMotorVoltage();
+        extension1StatorCurrentSignal = extensionMotor1.getStatorCurrent();
+        extension1SupplyCurrentSignal = extensionMotor1.getSupplyCurrent();
+        extension1TemperatureSignal = extensionMotor1.getDeviceTemp();
+        extension1ClosedLoopReferenceSignal = extensionMotor1.getClosedLoopReference();
+
+        extension2PositionSignal = extensionMotor1.getPosition();
+        extension2VelocitySignal = extensionMotor1.getRotorVelocity();
+        extension2VoltageSignal = extensionMotor1.getMotorVoltage();
+        extension2StatorCurrentSignal = extensionMotor1.getStatorCurrent();
+        extension2SupplyCurrentSignal = extensionMotor1.getSupplyCurrent();
+        extension2TemperatureSignal = extensionMotor1.getDeviceTemp();
+        extension2ClosedLoopReferenceSignal = extensionMotor1.getClosedLoopReference();
 
         signals.addSignals(
                 leaderPositionSignal,
@@ -195,17 +252,25 @@ public class IntakeIOHardware implements IntakeIO {
                 followerStatorCurrentSignal,
                 followerSupplyCurrentSignal,
                 followerTemperatureSignal,
-                extensionPositionSignal,
-                extensionVelocitySignal,
-                extensionVoltageSignal,
-                extensionStatorCurrentSignal,
-                extensionSupplyCurrentSignal,
-                extensionTemperatureSignal,
-                extensionClosedLoopReferenceSignal);
+                extension1PositionSignal,
+                extension1VelocitySignal,
+                extension1VoltageSignal,
+                extension1StatorCurrentSignal,
+                extension1SupplyCurrentSignal,
+                extension1TemperatureSignal,
+                extension1ClosedLoopReferenceSignal,
+                extension2PositionSignal,
+                extension2VelocitySignal,
+                extension2VoltageSignal,
+                extension2StatorCurrentSignal,
+                extension2SupplyCurrentSignal,
+                extension2TemperatureSignal,
+                extension2ClosedLoopReferenceSignal);
 
         signals.setUpdateFrequencyForAll(Constants.mainLoopFrequency);
 
-        extensionMotor.optimizeBusUtilization();
+        extensionMotor1.optimizeBusUtilization();
+        extensionMotor2.optimizeBusUtilization();
         leaderMotor.optimizeBusUtilization();
         followerMotor.optimizeBusUtilization();
     }
@@ -228,40 +293,77 @@ public class IntakeIOHardware implements IntakeIO {
         inputs.followerSupplyCurrent = followerSupplyCurrentSignal.getValue();
         inputs.followerTemperature = followerTemperatureSignal.getValueAsDouble();
 
-        inputs.extensionPosition = Meters.of(
-                extensionPositionSignal.getValue().in(Rotations) / extensionReduction * distancePerRotation.in(Meters));
-        inputs.extensionVelocity =
-                MetersPerSecond.of(extensionVelocitySignal.getValue().in(RotationsPerSecond)
+        inputs.extension1Position =
+                Meters.of(extension1PositionSignal.getValue().in(Rotations)
                         / extensionReduction
                         * distancePerRotation.in(Meters));
-        inputs.extensionVoltage = extensionVoltageSignal.getValue();
-        inputs.extensionStatorCurrent = extensionStatorCurrentSignal.getValue();
-        inputs.extensionSupplyCurrent = extensionSupplyCurrentSignal.getValue();
-        inputs.extensionTemperature = extensionTemperatureSignal.getValueAsDouble();
-        inputs.extensionClosedLoopReference = Meters.of(
-                extensionClosedLoopReferenceSignal.getValue() / extensionReduction * distancePerRotation.in(Meters));
+        inputs.extension1Velocity =
+                MetersPerSecond.of(extension1VelocitySignal.getValue().in(RotationsPerSecond)
+                        / extensionReduction
+                        * distancePerRotation.in(Meters));
+        inputs.extension1Voltage = extension1VoltageSignal.getValue();
+        inputs.extension1StatorCurrent = extension1StatorCurrentSignal.getValue();
+        inputs.extension1SupplyCurrent = extension1SupplyCurrentSignal.getValue();
+        inputs.extension1Temperature = extension1TemperatureSignal.getValueAsDouble();
+        inputs.extension1ClosedLoopReference = Meters.of(
+                extension1ClosedLoopReferenceSignal.getValue() / extensionReduction * distancePerRotation.in(Meters));
+
+        inputs.extension2Position =
+                Meters.of(extension2PositionSignal.getValue().in(Rotations)
+                        / extensionReduction
+                        * distancePerRotation.in(Meters));
+        inputs.extension2Velocity =
+                MetersPerSecond.of(extension2VelocitySignal.getValue().in(RotationsPerSecond)
+                        / extensionReduction
+                        * distancePerRotation.in(Meters));
+        inputs.extension2Voltage = extension2VoltageSignal.getValue();
+        inputs.extension2StatorCurrent = extension2StatorCurrentSignal.getValue();
+        inputs.extension2SupplyCurrent = extension2SupplyCurrentSignal.getValue();
+        inputs.extension2Temperature = extension2TemperatureSignal.getValueAsDouble();
+        inputs.extension2ClosedLoopReference = Meters.of(
+                extension2ClosedLoopReferenceSignal.getValue() / extensionReduction * distancePerRotation.in(Meters));
 
         LoggedTunableValue.ifChanged(
                 0,
                 () -> {
-                    extensionConfig.MotionMagic.MotionMagicCruiseVelocity = motionMagicMaxVelocity.get();
-                    extensionConfig.MotionMagic.MotionMagicAcceleration = motionMagicMaxAcceleration.get();
-                    extensionConfig.MotionMagic.MotionMagicExpo_kV = extensionKV.get();
-                    extensionConfig.MotionMagic.MotionMagicExpo_kA = extensionKA.get();
-                    extensionConfig.Slot0.kG = extensionKG.get();
-                    extensionConfig.Slot0.kS = extensionKS.get();
-                    extensionConfig.Slot0.kV = extensionKV.get();
-                    extensionConfig.Slot0.kA = extensionKA.get();
-                    extensionConfig.Slot0.kP = motionMagicKP.get();
-                    extensionConfig.Slot0.kD = motionMagicKD.get();
-                    extensionConfig.Slot1.kG = extensionKG.get();
-                    extensionConfig.Slot1.kS = extensionKS.get();
-                    extensionConfig.Slot1.kV = extensionKV.get();
-                    extensionConfig.Slot1.kA = extensionKA.get();
-                    extensionConfig.Slot1.kP = extensionKP.get();
-                    extensionConfig.Slot1.kD = extensionKD.get();
+                    extension1Config.MotionMagic.MotionMagicCruiseVelocity = motionMagicMaxVelocity.get();
+                    extension1Config.MotionMagic.MotionMagicAcceleration = motionMagicMaxAcceleration.get();
+                    extension1Config.MotionMagic.MotionMagicExpo_kV = extensionKV.get();
+                    extension1Config.MotionMagic.MotionMagicExpo_kA = extensionKA.get();
+                    extension1Config.Slot0.kG = extensionKG.get();
+                    extension1Config.Slot0.kS = extensionKS.get();
+                    extension1Config.Slot0.kV = extensionKV.get();
+                    extension1Config.Slot0.kA = extensionKA.get();
+                    extension1Config.Slot0.kP = motionMagicKP.get();
+                    extension1Config.Slot0.kD = motionMagicKD.get();
+                    extension1Config.Slot1.kG = extensionKG.get();
+                    extension1Config.Slot1.kS = extensionKS.get();
+                    extension1Config.Slot1.kV = extensionKV.get();
+                    extension1Config.Slot1.kA = extensionKA.get();
+                    extension1Config.Slot1.kP = extensionKP.get();
+                    extension1Config.Slot1.kD = extensionKD.get();
+
+                    extension2Config.MotionMagic.MotionMagicCruiseVelocity = motionMagicMaxVelocity.get();
+                    extension2Config.MotionMagic.MotionMagicAcceleration = motionMagicMaxAcceleration.get();
+                    extension2Config.MotionMagic.MotionMagicExpo_kV = extensionKV.get();
+                    extension2Config.MotionMagic.MotionMagicExpo_kA = extensionKA.get();
+                    extension2Config.Slot0.kG = extensionKG.get();
+                    extension2Config.Slot0.kS = extensionKS.get();
+                    extension2Config.Slot0.kV = extensionKV.get();
+                    extension2Config.Slot0.kA = extensionKA.get();
+                    extension2Config.Slot0.kP = motionMagicKP.get();
+                    extension2Config.Slot0.kD = motionMagicKD.get();
+                    extension2Config.Slot1.kG = extensionKG.get();
+                    extension2Config.Slot1.kS = extensionKS.get();
+                    extension2Config.Slot1.kV = extensionKV.get();
+                    extension2Config.Slot1.kA = extensionKA.get();
+                    extension2Config.Slot1.kP = extensionKP.get();
+                    extension2Config.Slot1.kD = extensionKD.get();
+
                     PhoenixUtil.tryUntilOk(
-                            5, () -> extensionMotor.getConfigurator().apply(extensionConfig));
+                            5, () -> extensionMotor1.getConfigurator().apply(extension1Config));
+                    PhoenixUtil.tryUntilOk(
+                            5, () -> extensionMotor2.getConfigurator().apply(extension2Config));
                 },
                 motionMagicMaxVelocity,
                 motionMagicMaxAcceleration,
@@ -287,7 +389,9 @@ public class IntakeIOHardware implements IntakeIO {
 
     @Override
     public void setExtensionOutput(double value, boolean ignoreLimits) {
-        extensionMotor.setControl(
+        extensionMotor1.setControl(
+                extensionDutyCycleControlRequest.withOutput(value).withIgnoreSoftwareLimits(!ignoreLimits));
+        extensionMotor2.setControl(
                 extensionDutyCycleControlRequest.withOutput(value).withIgnoreSoftwareLimits(!ignoreLimits));
     }
 
@@ -295,31 +399,38 @@ public class IntakeIOHardware implements IntakeIO {
     public void setExtensionPosition(Distance position) {
         var rotations = position.in(Meters) / distancePerRotation.in(Meters) * extensionReduction;
         if (useMotionMagic.get()) {
-            extensionMotor.setControl(extensionMotionMagicControlRequest.withPosition(rotations));
+            extensionMotor1.setControl(extensionMotionMagicControlRequest.withPosition(rotations));
+            extensionMotor2.setControl(extensionMotionMagicControlRequest.withPosition(rotations));
         } else {
-            extensionMotor.setControl(extensionPositionControlRequest.withPosition(rotations));
+            extensionMotor1.setControl(extensionPositionControlRequest.withPosition(rotations));
+            extensionMotor2.setControl(extensionPositionControlRequest.withPosition(rotations));
         }
     }
 
     @Override
     public void setExtensionNeutralMode(NeutralModeValue mode) {
-        extensionMotor.setNeutralMode(mode);
+        extensionMotor1.setNeutralMode(mode);
+        extensionMotor2.setNeutralMode(mode);
     }
 
     @Override
     public void setExtensionVoltage(Voltage voltage) {
-        extensionMotor.setControl(extensionVoltageControlRequest.withOutput(voltage));
+        extensionMotor1.setControl(extensionVoltageControlRequest.withOutput(voltage));
+        extensionMotor2.setControl(extensionVoltageControlRequest.withOutput(voltage));
     }
 
     @Override
     public void setExtensionEncoderPosition(Distance position) {
-        extensionMotor.setPosition(
+        extensionMotor1.setPosition(
+                Rotations.of(position.in(Meters) / distancePerRotation.in(Meters) * extensionReduction));
+        extensionMotor2.setPosition(
                 Rotations.of(position.in(Meters) / distancePerRotation.in(Meters) * extensionReduction));
     }
 
     @Override
     public void stop() {
         leaderMotor.stopMotor();
-        extensionMotor.stopMotor();
+        extensionMotor1.stopMotor();
+        extensionMotor2.stopMotor();
     }
 }

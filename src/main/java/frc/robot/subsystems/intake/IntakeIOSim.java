@@ -42,7 +42,7 @@ public class IntakeIOSim extends IntakeIOHardware {
                 maximumExtension.in(Meters),
                 false,
                 initialPosition.in(Meters));
-        var extensionMotorSimState = extensionMotor.getSimState();
+        var extensionMotorSimState = extensionMotor1.getSimState();
         extensionMotorSimState.setRawRotorPosition(
                 Rotations.of(initialPosition.in(Meters) / distancePerRotation.in(Meters) * extensionReduction));
 

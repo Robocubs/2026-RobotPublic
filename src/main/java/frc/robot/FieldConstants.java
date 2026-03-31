@@ -46,6 +46,10 @@ public final class FieldConstants {
             fieldLayout.getTagPose(21).get().getY();
     public static final double blueHubRightThresholdY =
             fieldLayout.getTagPose(18).get().getY();
+    public static final double redHubLeftThresholdY =
+            fieldLayout.getTagPose(5).get().getY();
+    public static final double redHubRightThresholdY =
+            fieldLayout.getTagPose(2).get().getY();
 
     public static final Pose2d redHubPose = fieldLayout
             .getTagPose(10)

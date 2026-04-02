@@ -28,6 +28,9 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOHardware;
 import frc.robot.subsystems.intake.IntakeIOSim;
+import frc.robot.subsystems.leds.LED;
+import frc.robot.subsystems.leds.LEDIO;
+import frc.robot.subsystems.leds.LEDIOHardware;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.superstructure.flywheel.FlywheelIO;
 import frc.robot.subsystems.superstructure.flywheel.FlywheelIOHardware;
@@ -63,6 +66,7 @@ public class RobotContainer {
     protected final Drive drive;
     protected final Vision vision;
     protected final Intake intake;
+    protected final LED leds;
     protected final Superstructure superstructure;
 
     // Controller
@@ -81,6 +85,7 @@ public class RobotContainer {
                     new AprilTagIOHardware(VisionConstants.fixedCameraConfig)
                 });
                 intake = new Intake(new IntakeIOHardware());
+                leds = new LED(new LEDIOHardware());
                 superstructure = new Superstructure(
                         new FlywheelIOHardware(),
                         new HoodIOHardware(),
@@ -96,6 +101,7 @@ public class RobotContainer {
                     new AprilTagIOSim(VisionConstants.turretCameraConfig, simRobotState),
                     new AprilTagIOSim(VisionConstants.fixedCameraConfig, simRobotState)
                 });
+                leds = new LED(new LEDIO() {});
                 intake = new Intake(new IntakeIOSim(simRobotState));
                 superstructure = new Superstructure(
                         new FlywheelIOSim(simRobotState),
@@ -110,6 +116,7 @@ public class RobotContainer {
                     () -> VisionConstants.turretCameraConfig, () -> VisionConstants.fixedCameraConfig
                 });
                 intake = new Intake(new IntakeIO() {});
+                leds = new LED(new LEDIO() {});
                 superstructure = new Superstructure(
                         new FlywheelIO() {}, new HoodIO() {}, new TurretIO() {}, new IndexerIO() {}, new KickerIO() {});
                 break;

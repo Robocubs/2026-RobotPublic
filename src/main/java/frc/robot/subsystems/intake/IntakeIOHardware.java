@@ -390,9 +390,9 @@ public class IntakeIOHardware implements IntakeIO {
     @Override
     public void setExtensionOutput(double value, boolean ignoreLimits) {
         extensionMotor1.setControl(
-                extensionDutyCycleControlRequest.withOutput(value).withIgnoreSoftwareLimits(!ignoreLimits));
+                extensionDutyCycleControlRequest.withOutput(value).withIgnoreSoftwareLimits(ignoreLimits));
         extensionMotor2.setControl(
-                extensionDutyCycleControlRequest.withOutput(value).withIgnoreSoftwareLimits(!ignoreLimits));
+                extensionDutyCycleControlRequest.withOutput(value).withIgnoreSoftwareLimits(ignoreLimits));
     }
 
     @Override

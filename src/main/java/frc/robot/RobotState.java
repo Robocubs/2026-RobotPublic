@@ -81,6 +81,7 @@ public class RobotState {
     private @AutoLogOutput @Getter FieldZone mostRecentMajorFieldZone = FieldZone.ALLIANCE_ZONE;
     private @AutoLogOutput @Getter Pose2d autoPathStart = Pose2d.kZero;
     private @AutoLogOutput @Getter double lastVisionMeasurementTimestamp = 0.0;
+    private @AutoLogOutput @Getter int totalVisionMeasurementsCount = 0;
 
     @Getter(lazy = true)
     private static final RobotState instance = new RobotState();
@@ -322,6 +323,7 @@ public class RobotState {
 
         if (measurements.length > 0) {
             lastVisionMeasurementTimestamp = Timer.getTimestamp();
+            totalVisionMeasurementsCount += measurements.length;
         }
     }
 

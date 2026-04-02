@@ -85,7 +85,11 @@ public class Turret {
     }
 
     public void setAngleUnoptimized(Angle angle) {
-        io.setPosition(angle);
+        setAngleUnoptimized(angle, RotationsPerSecond.zero());
+    }
+
+    public void setAngleUnoptimized(Angle angle, AngularVelocity velocity) {
+        io.setPosition(angle, velocity);
         lastPositionControl = Optional.of(angle);
         isWrapping = false;
     }

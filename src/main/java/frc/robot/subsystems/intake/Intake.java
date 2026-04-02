@@ -33,9 +33,9 @@ import static edu.wpi.first.wpilibj2.command.Commands.sequence;
 
 public class Intake extends SubsystemBase {
     private static final LoggedTunableNumber zeroRoutineOutput =
-            new LoggedTunableNumber("Intake/ZeroRoutineOutput", 0.2);
+            new LoggedTunableNumber("Intake/ZeroRoutineOutput", 0.5);
     private static final LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity> zeroVelocityTolerance =
-            new LoggedTunableMeasure<>("Intake/ZeroVelocityTolerance", MetersPerSecond.of(0.01));
+            new LoggedTunableMeasure<>("Intake/ZeroVelocityTolerance", MetersPerSecond.of(0.05));
 
     private final IntakeIO io;
     private final IntakeInputsAutoLogged inputs = new IntakeInputsAutoLogged();
@@ -95,7 +95,7 @@ public class Intake extends SubsystemBase {
                         rollerOutput = Math.abs(robotVelocity.vxMetersPerSecond) / maxVelocity;
                     }
 
-                    runSetpoint(extensionGoal, rollerOutput);
+                    runSetpoint(IntakeConstants.extendedPosition, rollerOutput);
                 }))
                 .withName("Intake/IntakeEfficient");
     }
@@ -131,13 +131,16 @@ public class Intake extends SubsystemBase {
     }
 
     public Command zeroRoutine() {
-        var debouncer = new Debouncer(0.5, DebounceType.kRising);
+        var debouncer = new Debouncer(0.15, DebounceType.kRising);
         return runOnce(() -> debouncer.calculate(false))
                 .andThen(run(() -> io.setExtensionOutput(zeroRoutineOutput.get(), true)))
                 .until(() -> debouncer.calculate(
-                        inputs.extension1Velocity.isNear(MetersPerSecond.zero(), zeroVelocityTolerance.get())))
+                                inputs.extension1Velocity.isNear(MetersPerSecond.zero(), zeroVelocityTolerance.get()))
+                        && debouncer.calculate(
+                                inputs.extension2Velocity.isNear(MetersPerSecond.zero(), zeroVelocityTolerance.get())))
+                .withTimeout(1.5)
+                .andThen(run(() -> io.setExtensionOutput(0.0)).withTimeout(0.1))
                 .andThen(runOnce(() -> io.setExtensionEncoderPosition(IntakeConstants.maximumExtension)))
-                .withTimeout(3.0)
                 .withInterruptBehavior(Command.InterruptionBehavior.kCancelIncoming)
                 .withName("Intake/ZeroRoutine");
     }

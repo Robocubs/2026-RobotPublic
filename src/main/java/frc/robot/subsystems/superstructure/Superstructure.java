@@ -40,6 +40,7 @@ import frc.robot.subsystems.superstructure.turret.TurretIO;
 import frc.robot.util.BidirectionalDebouncer;
 import frc.robot.util.TrapezoidProfileController;
 import frc.robot.util.tuning.LoggedTunableMeasure;
+import frc.robot.util.tuning.LoggedTunableNumber;
 import lombok.Getter;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -63,7 +64,9 @@ public class Superstructure extends SubsystemBase {
     private static final LoggedTunableMeasure<TimeUnit, Time> timeToShoot =
             new LoggedTunableMeasure<>("Superstructure/TimeToShoot", Seconds.of(2));
     private static final LoggedTunableMeasure<TimeUnit, Time> timeToScan =
-            new LoggedTunableMeasure<>("Superstructure/TimeToScan", Seconds.of(10));
+            new LoggedTunableMeasure<>("Superstructure/TimeToScan", Seconds.of(5));
+    private static final LoggedTunableNumber requiredScanMeasurementCount =
+            new LoggedTunableNumber("Superstructure/RequiredScanMeasurementCount", 7);
 
     private static final BidirectionalDebouncer indexingDebouncer = new BidirectionalDebouncer(0.25, 3.0, true);
 
@@ -79,6 +82,7 @@ public class Superstructure extends SubsystemBase {
     private final TrapezoidProfileController scanController = new TrapezoidProfileController(Math.PI / 2, 10.0);
 
     private @AutoLogOutput @Getter SuperstructureState state = SuperstructureState.STOP;
+    private int lastScanVisionMeasurementCount = 0;
 
     public static enum SuperstructureState {
         STOP,
@@ -200,7 +204,8 @@ public class Superstructure extends SubsystemBase {
                         scanController.calculate(turret.getPosition().in(Radians));
                 flywheel.stop();
                 hood.stop();
-                turret.setAngle(Radians.of(turretSetpoint.position), RadiansPerSecond.of(turretSetpoint.velocity));
+                turret.setAngleUnoptimized(
+                        Radians.of(turretSetpoint.position), RadiansPerSecond.of(turretSetpoint.velocity));
                 indexer.stop();
                 kicker.stop();
             }
@@ -262,8 +267,11 @@ public class Superstructure extends SubsystemBase {
         return new ContinuousSwitchCommand(run(() -> applyState(SuperstructureState.TRACKING_HUB_FOR_POSE)))
                 .withOption(
                         () -> Timer.getTimestamp() - robotState.getLastVisionMeasurementTimestamp()
-                                > timeToScan.get().in(Seconds),
-                        scan())
+                                        > timeToScan.get().in(Seconds)
+                                || robotState.getTotalVisionMeasurementsCount() - lastScanVisionMeasurementCount
+                                        < requiredScanMeasurementCount.get(),
+                        runOnce(() -> lastScanVisionMeasurementCount = robotState.getTotalVisionMeasurementsCount())
+                                .andThen(scan()))
                 .withOption(
                         () -> !robotState.inAllianceZone() && !robotState.onAllianceBump(),
                         run(() -> applyState(SuperstructureState.TRACKING_HUB_FOR_POSE_IDLE)))

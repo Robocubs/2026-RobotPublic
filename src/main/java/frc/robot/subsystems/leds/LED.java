@@ -29,7 +29,7 @@ import static edu.wpi.first.units.Units.Seconds;
 
 public class LED extends SubsystemBase {
     private static final int ledStartIdx = 0;
-    private static final int ledEndIdx = 400;
+    private static final int ledEndIdx = 600;
 
     private final LEDIO io;
     private final RobotState robotState = RobotState.getInstance();
@@ -61,16 +61,14 @@ public class LED extends SubsystemBase {
             changeAnimation(AnimationType.SetAll, Color.kMaroon);
         } else if (robotState.getMatchState().getPhase() == MatchState.Phase.AUTO) {
             changeAnimation(AnimationType.SetAll, Color.kWhite);
-        } else if (robotState.getMatchState().getPhase() == MatchState.Phase.ENDGAME) {
-            changeAnimation(AnimationType.SetAll, Color.kBlue);
-        } else if (robotState.getMatchState().getTimeToHubActive().lt(Seconds.of(5))) {
-            changeAnimation(AnimationType.SingleFade, Color.kRed);
+        } else if (robotState.getMatchState().getTimeToHubActive().lt(Seconds.of(7))) {
+            changeAnimation(AnimationType.Strobe, Color.kRed);
         } else if (robotState.getMatchState().getTimeToHubInactive().lt(Seconds.of(5))) {
-            changeAnimation(AnimationType.SingleFade, Color.kBlue);
+            changeAnimation(AnimationType.Strobe, Color.kBlue);
         } else if (robotState.getMatchState().isHubActive()) {
-            changeAnimation(AnimationType.SetAll, Color.kGreen);
-        } else if (robotState.getMatchState().isHubActive() == false) {
             changeAnimation(AnimationType.SetAll, Color.kBlue);
+        } else if (robotState.getMatchState().isHubActive() == false) {
+            changeAnimation(AnimationType.SetAll, Color.kRed);
         }
 
         if (toAnimate != null) {

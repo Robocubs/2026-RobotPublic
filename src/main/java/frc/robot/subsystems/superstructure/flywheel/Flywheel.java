@@ -10,6 +10,7 @@ package frc.robot.subsystems.superstructure.flywheel;
 import java.util.Optional;
 
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.util.PowerLogger;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -62,5 +63,9 @@ public class Flywheel {
 
     public boolean isAtVelocity(AngularVelocity target) {
         return target.isNear(inputs.leaderVelocity, velocityTolerance.get());
+    }
+
+    public Current getLeaderSupplyCurrent() {
+        return inputs.leaderSupplyCurrent;
     }
 }

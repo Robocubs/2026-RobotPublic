@@ -46,9 +46,11 @@ public final class TurretConstants {
 
     public static final Angle crtMinAngle = Rotations.of(-0.5);
     public static final Angle crtMaxAngle = Rotations.of(1.5);
-    public static final Angle minAngle = Degrees.of(-80);
-    public static final Angle maxAngle = Degrees.of(440);
+    public static final Angle minAngle = Degrees.of(-120);
+    public static final Angle maxAngle = Degrees.of(420);
     public static final Angle midAngle = maxAngle.minus(minAngle).div(2);
+    public static final Angle minUnwrappedAngle = midAngle.minus(Radians.of(Math.PI));
+    public static final Angle maxUnwrappedAngle = midAngle.plus(Radians.of(Math.PI));
     public static final boolean maxRangeLessThanOneRotation = maxAngle.in(Rotations) - minAngle.in(Rotations) <= 1.0;
 
     public static final Transform3d robotToTurret =
@@ -59,4 +61,5 @@ public final class TurretConstants {
 
     public static final LoggedTunableMeasure<AngleUnit, Angle> angleTolerance =
             new LoggedTunableMeasure<>("Turret/AngleTolerance", Degrees.of(2.0));
+    public static final Angle startWrappingTolerance = Degrees.of(10);
 }

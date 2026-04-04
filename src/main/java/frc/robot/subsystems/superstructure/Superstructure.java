@@ -37,6 +37,7 @@ import frc.robot.subsystems.superstructure.indexer.IndexerIO;
 import frc.robot.subsystems.superstructure.kicker.Kicker;
 import frc.robot.subsystems.superstructure.kicker.KickerIO;
 import frc.robot.subsystems.superstructure.turret.Turret;
+import frc.robot.subsystems.superstructure.turret.Turret.WrappingState;
 import frc.robot.subsystems.superstructure.turret.TurretConstants;
 import frc.robot.subsystems.superstructure.turret.TurretIO;
 import frc.robot.util.TrapezoidProfileController;
@@ -59,6 +60,8 @@ public class Superstructure extends SubsystemBase {
 
     private static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> indexerShootingVelocity =
             new LoggedTunableMeasure<>("Superstructure/IndexerShootingVelocity", RadiansPerSecond.of(40));
+    private static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> indexerReverseVelocity =
+            new LoggedTunableMeasure<>("Superstructure/IndexerReverseVelocity", RadiansPerSecond.of(-20));
     private static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> kickerShootingVelocity =
             new LoggedTunableMeasure<>("Superstructure/KickerShootingVelocity", RadiansPerSecond.of(120));
 
@@ -138,7 +141,10 @@ public class Superstructure extends SubsystemBase {
             superstructureSetpointCalculator.resetPassingTarget();
         }
 
-        if (state != SuperstructureState.SHOOTING_HUB && state != SuperstructureState.FEEDING && !turret.isWrapping()) {
+        if (state != SuperstructureState.SHOOTING_HUB
+                        && state != SuperstructureState.FEEDING
+                        && state != SuperstructureState.TUNING
+                || turret.getWrappingState() != WrappingState.NOT_WRAPPING) {
             shouldUnjam = false;
             agitateDebouncer.calculate(false);
         } else if (agitateTimeoutDebouncer.calculate(shouldUnjam)) {
@@ -146,8 +152,7 @@ public class Superstructure extends SubsystemBase {
             agitateDebouncer.calculate(false);
         } else if (!shouldUnjam) {
             shouldUnjam =
-                    agitateDebouncer.calculate(flywheel.getLeaderSupplyCurrent().lt(flywheelCurrentThreshold.get()))
-                            && (state == SuperstructureState.SHOOTING_HUB || state == SuperstructureState.FEEDING);
+                    agitateDebouncer.calculate(flywheel.getLeaderSupplyCurrent().lt(flywheelCurrentThreshold.get()));
         }
 
         switch (state) {
@@ -172,8 +177,8 @@ public class Superstructure extends SubsystemBase {
                 flywheel.setVelocity(superstructureSetpoint.flywheelVelocity);
                 hood.setAngle(superstructureSetpoint.hoodAngle);
                 turret.setAngle(superstructureSetpoint.turretAngle, superstructureSetpoint.turretVelocity);
-                if (turret.isWrapping()) {
-                    indexer.setVelocity(indexerShootingVelocity.get().times(-0.25));
+                if (turret.getWrappingState() != WrappingState.NOT_WRAPPING) {
+                    indexer.setVelocity(indexerReverseVelocity.get());
                     kicker.stop();
                 } else if (shouldUnjam) {
                     indexer.setVelocity(indexerShootingVelocity.get().times(-1.0));
@@ -203,9 +208,9 @@ public class Superstructure extends SubsystemBase {
                 var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForPassing();
                 flywheel.setVelocity(superstructureSetpoint.flywheelVelocity);
                 hood.setAngle(superstructureSetpoint.hoodAngle);
-                turret.setAngle(superstructureSetpoint.turretAngle, superstructureSetpoint.turretVelocity);
-                if (turret.isWrapping()) {
-                    indexer.setVelocity(indexerShootingVelocity.get().times(-0.25));
+                turret.setAngle(superstructureSetpoint.turretAngle);
+                if (turret.getWrappingState() != WrappingState.NOT_WRAPPING) {
+                    indexer.setVelocity(indexerReverseVelocity.get());
                     kicker.stop();
                 } else if (shouldUnjam) {
                     indexer.setVelocity(indexerShootingVelocity.get().times(-1.0));

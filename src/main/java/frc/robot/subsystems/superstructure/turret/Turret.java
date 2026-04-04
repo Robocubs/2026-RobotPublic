@@ -10,6 +10,7 @@ package frc.robot.subsystems.superstructure.turret;
 import java.util.Optional;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
@@ -19,6 +20,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.PhysicsUtil;
 import frc.robot.util.PowerLogger;
+import frc.robot.util.UnitsUtil;
 import lombok.Getter;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -43,7 +45,9 @@ public class Turret {
     private @AutoLogOutput boolean hasBeenZeroed = false;
     private double lastZeroedMeasuredError = Double.POSITIVE_INFINITY;
     private Optional<Angle> lastPositionControl = Optional.empty();
-    private @AutoLogOutput @Getter boolean isWrapping = false;
+    private @AutoLogOutput @Getter WrappingState wrappingState = WrappingState.NOT_WRAPPING;
+
+    private Debouncer aboutToWrapDebouncer = new Debouncer(0.1);
 
     public static record TurretSetpoint(Angle position, AngularVelocity velocity) {}
 
@@ -91,7 +95,7 @@ public class Turret {
     public void setAngleUnoptimized(Angle angle, AngularVelocity velocity) {
         io.setPosition(angle, velocity);
         lastPositionControl = Optional.of(angle);
-        isWrapping = false;
+        wrappingState = WrappingState.NOT_WRAPPING;
     }
 
     public void setAngle(Angle angle) {
@@ -106,13 +110,38 @@ public class Turret {
         setAngle(setpoint.position, setpoint.velocity);
     }
 
-    public void setAngle(Angle angleRadians, AngularVelocity velocity) {
-        var targetRadians = optimizeAngle(angleRadians.in(Radians));
+    public void setAngle(Angle angle, AngularVelocity velocity) {
+        var targetRadians = optimizeAngle(angle.in(Radians));
         var target = Radians.of(targetRadians);
-        if (!MathUtil.isNear(targetRadians, inputs.position.in(Radians), Math.PI / 4.0)) {
-            isWrapping = true;
-        } else if (isAtAngle(lastPositionControl.orElse(target))) {
-            isWrapping = false;
+
+        // TODO: Hold min or max angle until we actually want to start wrapping
+        switch (wrappingState) {
+            case NOT_WRAPPING -> {
+                var isCloseLimit = target.isNear(minAngle, startWrappingTolerance)
+                        || target.isNear(maxAngle, startWrappingTolerance);
+                if (isCloseLimit) {
+                    wrappingState = WrappingState.ABOUT_TO_WRAP;
+                }
+
+                aboutToWrapDebouncer.calculate(false);
+            }
+            case ABOUT_TO_WRAP -> {
+                if (aboutToWrapDebouncer.calculate(true)) {
+                    wrappingState = WrappingState.IS_WRAPPING;
+                }
+            }
+            case IS_WRAPPING -> {
+                target = UnitsUtil.inputModulus(target, minUnwrappedAngle, maxUnwrappedAngle);
+                targetRadians = target.in(Radians);
+
+                var positionToCheck = lastPositionControl.isPresent()
+                                && lastPositionControl.get().isNear(midAngle, UnitsUtil.piRadians)
+                        ? lastPositionControl.get()
+                        : target;
+                if (isAtAngle(positionToCheck)) {
+                    wrappingState = WrappingState.NOT_WRAPPING;
+                }
+            }
         }
 
         io.setPosition(target, velocity);
@@ -153,7 +182,7 @@ public class Turret {
     public void stop() {
         io.stop();
         lastPositionControl = Optional.empty();
-        isWrapping = false;
+        wrappingState = WrappingState.NOT_WRAPPING;
     }
 
     public void resetPosition() {
@@ -176,5 +205,11 @@ public class Turret {
 
     public boolean isAtAngle(Angle target) {
         return inputs.position.isNear(target, angleTolerance.get());
+    }
+
+    public static enum WrappingState {
+        ABOUT_TO_WRAP,
+        IS_WRAPPING,
+        NOT_WRAPPING,
     }
 }

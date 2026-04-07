@@ -44,7 +44,8 @@ public final class IntakeConstants {
     public static final LinearAcceleration maximumLinearAcceleration = InchesPerSecondPerSecond.of(100.0);
 
     public static final Distance extendedPosition = Inches.of(12.0);
-    public static final Distance partiallyExtendedPosition = Inches.of(4.0);
+    public static final Distance mostlyExtendedPosition = Inches.of(8.0);
+    public static final Distance partiallyExtendedPosition = Inches.of(5.0);
     public static final Distance retractedPosition = Inches.of(3.0);
     public static final Distance extendedRollerActivationPosition = extendedPosition.minus(Inches.of(2.0));
 }

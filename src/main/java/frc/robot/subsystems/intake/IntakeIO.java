@@ -50,6 +50,9 @@ public interface IntakeIO {
         public Current extension2SupplyCurrent = Amps.zero();
         public double extension2Temperature = 0.0;
         public Distance extension2ClosedLoopReference = Meters.zero();
+
+        public boolean limitSwitch1 = false;
+        public boolean limitSwitch2 = false;
     }
 
     public default void updateInputs(IntakeInputs inputs) {}
@@ -59,6 +62,8 @@ public interface IntakeIO {
     public default void setExtensionOutput(double value) {}
 
     public default void setExtensionOutput(double value, boolean ignoreLimits) {}
+
+    public default void setExtensionOutput(double value1, double value2, boolean ignoreLimits) {}
 
     public default void setExtensionPosition(Distance position) {}
 

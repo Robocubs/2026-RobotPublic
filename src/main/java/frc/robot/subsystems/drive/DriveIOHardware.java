@@ -13,6 +13,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
+import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.StatusSignalCollection;
 import com.ctre.phoenix6.Utils;
@@ -24,7 +26,9 @@ import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Quaternion;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
@@ -44,6 +48,10 @@ public class DriveIOHardware implements DriveIO {
     private final ModuleSignals frontRightModuleSignals;
     private final ModuleSignals backLeftModuleSignals;
     private final ModuleSignals backRightModuleSignals;
+    private final StatusSignal<Double> rotationW;
+    private final StatusSignal<Double> rotationX;
+    private final StatusSignal<Double> rotationY;
+    private final StatusSignal<Double> rotationZ;
 
     private record ModuleSignals(
             StatusSignal<AngularVelocity> driveVelocity,
@@ -103,6 +111,13 @@ public class DriveIOHardware implements DriveIO {
         frontRightModuleSignals = createModuleSignals.apply(1);
         backLeftModuleSignals = createModuleSignals.apply(2);
         backRightModuleSignals = createModuleSignals.apply(3);
+
+        rotationW = swerveDrivetrain.getPigeon2().getQuatW();
+        rotationX = swerveDrivetrain.getPigeon2().getQuatX();
+        rotationY = swerveDrivetrain.getPigeon2().getQuatY();
+        rotationZ = swerveDrivetrain.getPigeon2().getQuatZ();
+
+        BaseStatusSignal.setUpdateFrequencyForAll(100, rotationW, rotationX, rotationY, rotationZ);
     }
 
     protected void regulateModuleConstants(SwerveModuleConstants<?, ?, ?>[] constants) {}
@@ -122,13 +137,20 @@ public class DriveIOHardware implements DriveIO {
             inputsLock.unlock();
         }
 
-        driveInputs.rotation = swerveDrivetrain.getRotation3d();
-
         statusSignals.refreshAll();
+
         updateModuleInputs(frontLeftModuleSignals, frontLeftModuleInputs);
         updateModuleInputs(frontRightModuleSignals, frontRightModuleInputs);
         updateModuleInputs(backLeftModuleSignals, backLeftModuleInputs);
         updateModuleInputs(backRightModuleSignals, backRightModuleInputs);
+
+        driveInputs.gyroConnected = BaseStatusSignal.refreshAll(rotationW, rotationX, rotationY, rotationZ)
+                .equals(StatusCode.OK);
+        driveInputs.rotation = new Rotation3d(new Quaternion(
+                rotationW.getValueAsDouble(),
+                rotationX.getValueAsDouble(),
+                rotationY.getValueAsDouble(),
+                rotationZ.getValueAsDouble()));
     }
 
     private void updateModuleInputs(ModuleSignals signals, ModuleIOInputs inputs) {

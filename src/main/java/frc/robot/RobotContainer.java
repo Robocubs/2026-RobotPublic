@@ -146,6 +146,8 @@ public class RobotContainer {
         autoChooser.addRoutine("Right", autoRoutines::Right);
         autoChooser.addRoutine("NewLeftFinalVersion", autoRoutines::NewLeftFinalVersion);
         autoChooser.addRoutine("NewRightFinalVersion", autoRoutines::NewRightFinalVersion);
+        autoChooser.addRoutine("StationToBump", autoRoutines::StationToBump);
+        autoChooser.addRoutine("ShootInPlace", autoRoutines::ShootInPlace);
 
         if (Constants.characterizationEnabled) {
             var characterizationChooser = new LoggedAutoChooser("Characterization");
@@ -177,7 +179,7 @@ public class RobotContainer {
                 () -> -driverController.getRightX(),
                 driverController.rightTrigger().or(driverController.leftTrigger())));
 
-        intake.setDefaultCommand(intake.stop());
+        intake.setDefaultCommand(intake.defaultCommand());
 
         superstructure.setDefaultCommand(superstructure.defaultCommand());
 
@@ -202,7 +204,7 @@ public class RobotContainer {
 
         driverController.y().onTrue(intake.agitate());
         driverController.a().onTrue(intake.stop());
-        driverController.x().onTrue(intake.intakeEfficient());
+        driverController.x().onTrue(intake.zeroRoutine());
         driverController.b().onTrue(intake.stow());
         driverController.povDown().whileTrue(intake.reverse()).onFalse(intake.intakeEfficient());
 

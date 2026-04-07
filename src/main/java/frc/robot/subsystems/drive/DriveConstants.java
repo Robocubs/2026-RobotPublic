@@ -72,7 +72,7 @@ public final class DriveConstants {
             * TunerConstants.FrontLeft.SlipCurrent
             * 4
             * driveMotorGearRatio); // t = I * kt * numMotors * reduction
-    public static final LinearVelocity maxSpeed = TunerConstants.kSpeedAt12Volts;
+    public static final LinearVelocity maxSpeed = MetersPerSecond.of(4.0);
     public static final LinearAcceleration maxAcceleration = MetersPerSecondPerSecond.of(
             maxTorque.in(NewtonMeters) / wheelRadius.in(Meters) / RobotConstants.robotMass.in(Kilograms));
 

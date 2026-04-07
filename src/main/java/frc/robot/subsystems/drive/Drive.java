@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import choreo.trajectory.SwerveSample;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -20,17 +21,26 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.PowerDistribution;
+import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.RobotState;
 import frc.robot.RobotState.DriveMeasurement;
 import frc.robot.commands.DriveToPose;
 import frc.robot.subsystems.drive.DriveIO.DriveIOInputs;
 import frc.robot.subsystems.drive.controllers.PathController;
+import frc.robot.util.CompositePowerLogger;
 import frc.robot.util.PowerLogger;
 import lombok.Getter;
 import org.littletonrobotics.junction.Logger;
 
+import static edu.wpi.first.wpilibj2.command.Commands.waitSeconds;
 import static frc.robot.subsystems.drive.DriveConstants.kinematics;
 
 public class Drive extends SubsystemBase {
@@ -55,8 +65,22 @@ public class Drive extends SubsystemBase {
     private final PowerLogger frontRightSteerPowerLogger = new PowerLogger("FRSteer");
     private final PowerLogger backLeftSteerPowerLogger = new PowerLogger("BLSteer");
     private final PowerLogger backRightSteerPowerLogger = new PowerLogger("BRSteer");
+    private final CompositePowerLogger drivePowerLogger = new CompositePowerLogger(
+            "Drive",
+            frontLeftDrivePowerLogger,
+            frontRightDrivePowerLogger,
+            backLeftDrivePowerLogger,
+            backRightDrivePowerLogger);
+    private final CompositePowerLogger steerPowerLogger = new CompositePowerLogger(
+            "Steer",
+            frontLeftSteerPowerLogger,
+            frontRightSteerPowerLogger,
+            backLeftSteerPowerLogger,
+            backRightSteerPowerLogger);
     private final RobotState robotState = RobotState.getInstance();
     private final PathController choreoTrajectoryController = new PathController();
+    private final PowerDistribution pdh = new PowerDistribution(1, ModuleType.kRev);
+    private final Alert gyroDisconnectedAlert = new Alert("Gyro Disconnected", AlertType.kWarning);
 
     private @Getter Rotation2d rawHeading = Rotation2d.kZero;
     private @Getter SwerveModuleState[] moduleStates =
@@ -70,6 +94,20 @@ public class Drive extends SubsystemBase {
         robotState.setVisionMeasurementConsumer(io::addVisionMeasurements);
         robotState.setPoseResetConsumer(io::resetPose);
         robotState.setHeadingResetConsumer(io::resetRotation);
+
+        pdh.setSwitchableChannel(true);
+
+        // Mitigation for pigeon going dead and needing power cycle to fix
+        var gyroConnectedDebouncer = new Debouncer(1.0);
+        var initTime = Timer.getTimestamp();
+        new Trigger(() -> gyroConnectedDebouncer.calculate(
+                        !driveInputs.gyroConnected && Timer.getTimestamp() > initTime + 30.0))
+                .onTrue(Commands.runOnce(() -> pdh.setSwitchableChannel(false))
+                        .andThen(waitSeconds(2.0))
+                        .andThen(() -> pdh.setSwitchableChannel(true))
+                        .andThen(waitSeconds(10.0))
+                        .ignoringDisable(true)
+                        .withName("Drive/RestartGyro"));
     }
 
     @Override
@@ -86,6 +124,8 @@ public class Drive extends SubsystemBase {
         Logger.processInputs("Module/BL", backLeftModuleInputs);
         Logger.processInputs("Module/BR", backRightModuleInputs);
 
+        gyroDisconnectedAlert.set(!driveInputs.gyroConnected);
+
         frontLeftDrivePowerLogger.log(frontLeftModuleInputs.driveStatorCurrent, frontLeftModuleInputs.driveVoltage);
         frontRightDrivePowerLogger.log(frontRightModuleInputs.driveStatorCurrent, frontRightModuleInputs.driveVoltage);
         backLeftDrivePowerLogger.log(backLeftModuleInputs.driveStatorCurrent, backLeftModuleInputs.driveVoltage);
@@ -94,6 +134,8 @@ public class Drive extends SubsystemBase {
         frontRightSteerPowerLogger.log(frontRightModuleInputs.steerStatorCurrent, frontRightModuleInputs.steerVoltage);
         backLeftSteerPowerLogger.log(backLeftModuleInputs.steerStatorCurrent, backLeftModuleInputs.steerVoltage);
         backRightSteerPowerLogger.log(backRightModuleInputs.steerStatorCurrent, backRightModuleInputs.steerVoltage);
+        drivePowerLogger.log();
+        steerPowerLogger.log();
 
         var measurements = Stream.of(driveInputs.swerve)
                 .map(input -> new RobotState.DriveMeasurement(

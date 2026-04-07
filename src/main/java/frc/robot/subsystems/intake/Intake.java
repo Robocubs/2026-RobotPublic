@@ -12,35 +12,36 @@ import java.util.function.Function;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
-import edu.wpi.first.units.LinearVelocityUnit;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.RobotState;
 import frc.robot.commands.characterization.SysIdCommandSet;
 import frc.robot.subsystems.drive.DriveConstants;
+import frc.robot.util.CompositePowerLogger;
 import frc.robot.util.PowerLogger;
-import frc.robot.util.tuning.LoggedTunableMeasure;
 import frc.robot.util.tuning.LoggedTunableNumber;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.wpilibj2.command.Commands.either;
+import static edu.wpi.first.wpilibj2.command.Commands.parallel;
 import static edu.wpi.first.wpilibj2.command.Commands.sequence;
 
 public class Intake extends SubsystemBase {
     private static final LoggedTunableNumber zeroRoutineOutput =
-            new LoggedTunableNumber("Intake/ZeroRoutineOutput", 0.5);
-    private static final LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity> zeroVelocityTolerance =
-            new LoggedTunableMeasure<>("Intake/ZeroVelocityTolerance", MetersPerSecond.of(0.05));
-
+            new LoggedTunableNumber("Intake/ZeroRoutineOutput", 0.4);
     private final IntakeIO io;
     private final IntakeInputsAutoLogged inputs = new IntakeInputsAutoLogged();
     private final PowerLogger leaderPowerLogger = new PowerLogger("IntakeLeader");
     private final PowerLogger followerPowerLogger = new PowerLogger("IntakeFollower");
+    private final CompositePowerLogger powerLogger =
+            new CompositePowerLogger("Intake", leaderPowerLogger, followerPowerLogger);
 
     private @AutoLogOutput Distance extensionGoal = IntakeConstants.minimumExtension;
 
@@ -54,8 +55,10 @@ public class Intake extends SubsystemBase {
     public void periodic() {
         io.updateInputs(inputs);
         Logger.processInputs("Intake", inputs);
+
         leaderPowerLogger.log(inputs.leaderStatorCurrent, inputs.leaderVoltage);
         followerPowerLogger.log(inputs.followerStatorCurrent, inputs.followerVoltage);
+        powerLogger.log();
     }
 
     private void runSetpoint(Distance extension, double rollerOutput) {
@@ -72,6 +75,23 @@ public class Intake extends SubsystemBase {
     public boolean isAtPosition(Distance position) {
         return inputs.extension1Position.isNear(position, IntakeConstants.extensionTolerance)
                 && inputs.extension2Position.isNear(position, IntakeConstants.extensionTolerance);
+    }
+
+    public Command defaultCommand() {
+        var switchCheckDebouncer = new Debouncer(1.0);
+        var zeroRoutine = zeroRoutine();
+        var autoZero = sequence(
+                Commands.runOnce(() -> switchCheckDebouncer.calculate(false)),
+                Commands.waitSeconds(1.0),
+                Commands.idle()
+                        .until(() -> switchCheckDebouncer.calculate(!inputs.limitSwitch1 || !inputs.limitSwitch2)),
+                Commands.runOnce(() -> CommandScheduler.getInstance().schedule(zeroRoutine)));
+        return either(
+                        parallel(intakeEfficient(), autoZero),
+                        stop(),
+                        () -> inputs.extension1Position.gt(IntakeConstants.mostlyExtendedPosition)
+                                || inputs.extension2Position.gt(IntakeConstants.mostlyExtendedPosition))
+                .withName("Intake/Default");
     }
 
     public Command intakeEfficient() {
@@ -100,6 +120,15 @@ public class Intake extends SubsystemBase {
                 .withName("Intake/IntakeEfficient");
     }
 
+    public Command intakeWithAutoUnjam() {
+        var switchCheckDebouncer = new Debouncer(1.0);
+        return Commands.repeatingSequence(
+                        intake().until(() ->
+                                switchCheckDebouncer.calculate(!inputs.limitSwitch1 || !inputs.limitSwitch2)),
+                        zeroRoutine())
+                .withName("Intake/IntakeWithAutoUnjam");
+    }
+
     public Command intake() {
         return run(() -> runSetpoint(IntakeConstants.extendedPosition, 1.0)).withName("Intake/Intake");
     }
@@ -120,7 +149,8 @@ public class Intake extends SubsystemBase {
                         run(() -> runSetpoint(IntakeConstants.extendedPosition, 0.5))
                                 .until(() -> isAtExtensionGoal())
                                 .withTimeout(1.0))
-                .repeatedly();
+                .repeatedly()
+                .withName("Intake/Agitate");
     }
 
     public Command stop() {
@@ -131,13 +161,19 @@ public class Intake extends SubsystemBase {
     }
 
     public Command zeroRoutine() {
-        var debouncer = new Debouncer(0.15, DebounceType.kRising);
-        return runOnce(() -> debouncer.calculate(false))
-                .andThen(run(() -> io.setExtensionOutput(zeroRoutineOutput.get(), true)))
-                .until(() -> debouncer.calculate(
-                                inputs.extension1Velocity.isNear(MetersPerSecond.zero(), zeroVelocityTolerance.get()))
-                        && debouncer.calculate(
-                                inputs.extension2Velocity.isNear(MetersPerSecond.zero(), zeroVelocityTolerance.get())))
+        return run(() -> {
+                    io.setExtensionOutput(
+                            inputs.limitSwitch1 ? 0.0 : zeroRoutineOutput.get(),
+                            inputs.limitSwitch2 ? 0.0 : zeroRoutineOutput.get(),
+                            true);
+                    io.setRollerOutput(
+                            inputs.extension1Position.gt(IntakeConstants.extendedRollerActivationPosition)
+                                            && inputs.extension2Position.gt(
+                                                    IntakeConstants.extendedRollerActivationPosition)
+                                    ? 0.9
+                                    : 0.0);
+                })
+                .until(() -> inputs.limitSwitch1 && inputs.limitSwitch2)
                 .withTimeout(1.5)
                 .andThen(run(() -> io.setExtensionOutput(0.0)).withTimeout(0.1))
                 .andThen(runOnce(() -> io.setExtensionEncoderPosition(IntakeConstants.maximumExtension)))

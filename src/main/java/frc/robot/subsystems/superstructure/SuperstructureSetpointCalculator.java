@@ -10,6 +10,7 @@ package frc.robot.subsystems.superstructure;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -68,11 +69,11 @@ public class SuperstructureSetpointCalculator {
 
     private static final AngularVelocity idleFlywheelVelocity = RadiansPerSecond.of(200.0);
 
-    private static final double bluePassingPointX = FieldConstants.blueAllianceThreshold - 2.5;
-    private static final double redPassingPointX = FieldConstants.redAllianceThreshold + 2.5;
+    private static final double bluePassingPointX = FieldConstants.blueAllianceThreshold - 1.5;
+    private static final double redPassingPointX = FieldConstants.redAllianceThreshold + 1.5;
 
-    private static final double leftPassingPoseY = FieldConstants.blueHubLeftThresholdY + 2.0;
-    private static final double rightPassingPoseY = FieldConstants.blueHubRightThresholdY - 2.0;
+    private static final double passingYMinOffset = 1.5;
+    private static final double passingYMaxOffset = 2.25;
 
     private static final double hubOffset = 0.3;
     private static final Translation2d blueHubFL = new Translation2d(
@@ -172,15 +173,21 @@ public class SuperstructureSetpointCalculator {
     private PassingTarget getClosestPassingTarget() {
         var turretTranslation = robotState.getTurretPose().toPose2d().getTranslation();
         var x = RobotState.isBlue() ? bluePassingPointX : redPassingPointX;
-        var leftTarget = new Translation2d(x, leftPassingPoseY);
-        var rightTarget = new Translation2d(x, rightPassingPoseY);
+        var leftTarget = new Translation2d(x, computePassingY(PassingTarget.LEFT));
+        var rightTarget = new Translation2d(x, computePassingY(PassingTarget.RIGHT));
         return turretTranslation.getDistance(leftTarget) <= turretTranslation.getDistance(rightTarget)
                 ? PassingTarget.LEFT
                 : PassingTarget.RIGHT;
     }
 
     private Pose2d getPassingPose() {
-        if (selectedTarget == PassingTarget.NONE) {
+        var turretY = robotState.getTurretPose().getY();
+
+        if (turretY >= FieldConstants.blueHubLeftThresholdY) {
+            selectedTarget = PassingTarget.LEFT;
+        } else if (turretY <= FieldConstants.blueHubRightThresholdY) {
+            selectedTarget = PassingTarget.RIGHT;
+        } else if (selectedTarget == PassingTarget.NONE) {
             selectedTarget = getClosestPassingTarget();
         }
 
@@ -190,11 +197,26 @@ public class SuperstructureSetpointCalculator {
         }
 
         var x = RobotState.isBlue() ? bluePassingPointX : redPassingPointX;
-        var y = selectedTarget == PassingTarget.LEFT ? leftPassingPoseY : rightPassingPoseY;
+        var y = computePassingY(selectedTarget);
         var rotation = RobotState.isBlue() ? Rotation2d.kZero : Rotation2d.k180deg;
 
         Logger.recordOutput("SuperstructureSetpointCalculator/SelectedPassingTarget", selectedTarget.toString());
         return new Pose2d(new Translation2d(x, y), rotation);
+    }
+
+    private double computePassingY(PassingTarget target) {
+        var turretY = robotState.getTurretPose().getY();
+        if (target == PassingTarget.LEFT) {
+            return MathUtil.clamp(
+                    turretY,
+                    FieldConstants.blueHubLeftThresholdY + passingYMinOffset,
+                    FieldConstants.blueHubLeftThresholdY + passingYMaxOffset);
+        } else {
+            return MathUtil.clamp(
+                    turretY,
+                    FieldConstants.blueHubRightThresholdY - passingYMaxOffset,
+                    FieldConstants.blueHubRightThresholdY - passingYMinOffset);
+        }
     }
 
     private Translation2d adjustTranslationForRobotMovement(Translation2d originalTranslation, double timeOfFlight) {
@@ -238,8 +260,7 @@ public class SuperstructureSetpointCalculator {
     private boolean isPassingBlockedFor(PassingTarget target) {
         var turretTranslation = robotState.getTurretPose().toPose2d().getTranslation();
         var x = RobotState.isBlue() ? bluePassingPointX : redPassingPointX;
-        var y = target == PassingTarget.LEFT ? leftPassingPoseY : rightPassingPoseY;
-        var passingTarget = new Translation2d(x, y);
+        var passingTarget = new Translation2d(x, computePassingY(target));
 
         return isBlockedByHub(turretTranslation, passingTarget, blueHubFL, blueHubFR, blueHubBL, blueHubBR)
                 || isBlockedByHub(turretTranslation, passingTarget, redHubFL, redHubFR, redHubBL, redHubBR);

@@ -37,17 +37,20 @@ public interface DriveIO {
     public class DriveIOInputs implements LoggableInputs {
         public SwerveDriveInputs[] swerve = new SwerveDriveInputs[0];
         public Rotation3d rotation = Rotation3d.kZero;
+        public boolean gyroConnected;
 
         @Override
         public void toLog(LogTable table) {
             table.put("Swerve", swerve);
             table.put("Rotation", rotation);
+            table.put("GyroConnected", gyroConnected);
         }
 
         @Override
         public void fromLog(LogTable table) {
             swerve = table.get("Swerve", swerve);
             rotation = table.get("Rotation", rotation);
+            gyroConnected = table.get("GyroConnected", gyroConnected);
 
             swerve = ReplayRobotState.getInstance().update(swerve);
         }

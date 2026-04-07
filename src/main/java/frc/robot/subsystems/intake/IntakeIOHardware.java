@@ -35,6 +35,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.DigitalInput;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
 import frc.robot.PhoenixCANBus;
@@ -65,6 +66,9 @@ public class IntakeIOHardware implements IntakeIO {
     private static final LoggedTunableNumber extensionKP =
             new LoggedTunableNumber("Intake/ExtensionKP", Constants.currentMode == Mode.SIM ? 1.0 : 1.0);
     private static final LoggedTunableNumber extensionKD = new LoggedTunableNumber("Intake/ExtensionKD", 0.0);
+
+    private final DigitalInput limitSwitch1 = new DigitalInput(0);
+    private final DigitalInput limitSwitch2 = new DigitalInput(6);
 
     protected final TalonFX leaderMotor;
     protected final TalonFX followerMotor;
@@ -151,7 +155,7 @@ public class IntakeIOHardware implements IntakeIO {
                         .withReverseSoftLimitThreshold(
                                 minimumExtension.in(Meters) / distancePerRotation.in(Meters) * extensionReduction))
                 .withCurrentLimits(new CurrentLimitsConfigs()
-                        .withStatorCurrentLimit(Amps.of(40))
+                        .withStatorCurrentLimit(Amps.of(30))
                         .withSupplyCurrentLimit(Amps.of(30))
                         .withSupplyCurrentLowerLimit(30));
 
@@ -188,7 +192,7 @@ public class IntakeIOHardware implements IntakeIO {
                         .withReverseSoftLimitThreshold(
                                 minimumExtension.in(Meters) / distancePerRotation.in(Meters) * extensionReduction))
                 .withCurrentLimits(new CurrentLimitsConfigs()
-                        .withStatorCurrentLimit(Amps.of(40))
+                        .withStatorCurrentLimit(Amps.of(30))
                         .withSupplyCurrentLimit(Amps.of(30))
                         .withSupplyCurrentLowerLimit(30));
 
@@ -231,13 +235,13 @@ public class IntakeIOHardware implements IntakeIO {
         extension1TemperatureSignal = extensionMotor1.getDeviceTemp();
         extension1ClosedLoopReferenceSignal = extensionMotor1.getClosedLoopReference();
 
-        extension2PositionSignal = extensionMotor1.getPosition();
-        extension2VelocitySignal = extensionMotor1.getRotorVelocity();
-        extension2VoltageSignal = extensionMotor1.getMotorVoltage();
-        extension2StatorCurrentSignal = extensionMotor1.getStatorCurrent();
-        extension2SupplyCurrentSignal = extensionMotor1.getSupplyCurrent();
-        extension2TemperatureSignal = extensionMotor1.getDeviceTemp();
-        extension2ClosedLoopReferenceSignal = extensionMotor1.getClosedLoopReference();
+        extension2PositionSignal = extensionMotor2.getPosition();
+        extension2VelocitySignal = extensionMotor2.getRotorVelocity();
+        extension2VoltageSignal = extensionMotor2.getMotorVoltage();
+        extension2StatorCurrentSignal = extensionMotor2.getStatorCurrent();
+        extension2SupplyCurrentSignal = extensionMotor2.getSupplyCurrent();
+        extension2TemperatureSignal = extensionMotor2.getDeviceTemp();
+        extension2ClosedLoopReferenceSignal = extensionMotor2.getClosedLoopReference();
 
         signals.addSignals(
                 leaderPositionSignal,
@@ -323,6 +327,9 @@ public class IntakeIOHardware implements IntakeIO {
         inputs.extension2ClosedLoopReference = Meters.of(
                 extension2ClosedLoopReferenceSignal.getValue() / extensionReduction * distancePerRotation.in(Meters));
 
+        inputs.limitSwitch1 = !limitSwitch1.get();
+        inputs.limitSwitch2 = !limitSwitch2.get();
+
         LoggedTunableValue.ifChanged(
                 0,
                 () -> {
@@ -393,6 +400,14 @@ public class IntakeIOHardware implements IntakeIO {
                 extensionDutyCycleControlRequest.withOutput(value).withIgnoreSoftwareLimits(ignoreLimits));
         extensionMotor2.setControl(
                 extensionDutyCycleControlRequest.withOutput(value).withIgnoreSoftwareLimits(ignoreLimits));
+    }
+
+    @Override
+    public void setExtensionOutput(double value1, double value2, boolean ignoreLimits) {
+        extensionMotor1.setControl(
+                extensionDutyCycleControlRequest.withOutput(value1).withIgnoreSoftwareLimits(ignoreLimits));
+        extensionMotor2.setControl(
+                extensionDutyCycleControlRequest.withOutput(value2).withIgnoreSoftwareLimits(ignoreLimits));
     }
 
     @Override

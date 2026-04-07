@@ -106,4 +106,19 @@ public class AutoRoutines {
                 .shoot(12.4)
                 .build();
     }
+
+    public AutoRoutine StationToBump() {
+        return create("StationToBump")
+                .intakeEfficient()
+                .shoot()
+                .driveToStation(3)
+                .followPath("StationToBump", 0)
+                .agitateIntake()
+                .shoot(15)
+                .build();
+    }
+
+    public AutoRoutine ShootInPlace() {
+        return create("ShootInPlace").shoot(20).build();
+    }
 }

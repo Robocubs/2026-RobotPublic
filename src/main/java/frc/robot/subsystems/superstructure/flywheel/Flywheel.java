@@ -12,6 +12,7 @@ import java.util.Optional;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
+import frc.robot.util.CompositePowerLogger;
 import frc.robot.util.PowerLogger;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -24,6 +25,8 @@ public class Flywheel {
     private final FlywheelInputsAutoLogged inputs = new FlywheelInputsAutoLogged();
     private final PowerLogger leaderPowerLogger = new PowerLogger("FlywheelLeader");
     private final PowerLogger followerPowerLogger = new PowerLogger("FlywheelFollower");
+    private final CompositePowerLogger powerLogger =
+            new CompositePowerLogger("Flywheel", leaderPowerLogger, followerPowerLogger);
 
     private Optional<AngularVelocity> lastVelocityControl = Optional.empty();
 
@@ -34,8 +37,10 @@ public class Flywheel {
     public void periodic() {
         io.updateInputs(inputs);
         Logger.processInputs("Flywheel", inputs);
+
         leaderPowerLogger.log(inputs.leaderStatorCurrent, inputs.leaderVoltage);
         followerPowerLogger.log(inputs.followerStatorCurrent, inputs.followerVoltage);
+        powerLogger.log();
     }
 
     public void setVelocity(AngularVelocity velocity) {

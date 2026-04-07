@@ -32,6 +32,7 @@ import frc.robot.util.GeometryUtil;
 import frc.robot.util.PathBuilder;
 import org.littletonrobotics.junction.Logger;
 
+import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 public class LoggedAutoRoutine {
@@ -46,6 +47,7 @@ public class LoggedAutoRoutine {
     private final SubsystemScheduler<Intake> intake;
 
     private boolean bound = false;
+    private static final Pose2d stationPose = new Pose2d(0.503, 0.523, Rotation2d.kCW_90deg);
 
     public LoggedAutoRoutine(
             String name,
@@ -206,6 +208,16 @@ public class LoggedAutoRoutine {
         return this;
     }
 
+    public LoggedAutoRoutine driveToStation(double seconds) {
+        var stationPoseFlipped = GeometryUtil.autoFlip(stationPose);
+        commands.add(drive.toPose(() -> stationPoseFlipped, true, true)
+                .until(() ->
+                        robotState.getPose().getTranslation().getDistance(stationPoseFlipped.getTranslation()) <= 0.2));
+        commands.add(drive.toPose(() -> stationPoseFlipped, false, true).withTimeout(Seconds.of(seconds)));
+        pathBuilder.add(stationPose);
+        return this;
+    }
+
     public LoggedAutoRoutine setSuperstructureState(SuperstructureState state) {
         commands.add(superstructure.schedule(s -> s.trackingHubForPose()));
         return this;
@@ -245,6 +257,11 @@ public class LoggedAutoRoutine {
     }
 
     public LoggedAutoRoutine intake() {
+        commands.add(intake.schedule(i -> i.intakeWithAutoUnjam()));
+        return this;
+    }
+
+    public LoggedAutoRoutine intakeEfficient() {
         commands.add(intake.schedule(i -> i.intakeEfficient()));
         return this;
     }
@@ -256,6 +273,11 @@ public class LoggedAutoRoutine {
 
     public LoggedAutoRoutine agitateIntake() {
         commands.add(intake.schedule(i -> i.agitate()));
+        return this;
+    }
+
+    public LoggedAutoRoutine shoot() {
+        commands.add(superstructure.schedule(s -> s.shoot()));
         return this;
     }
 

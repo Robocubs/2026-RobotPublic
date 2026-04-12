@@ -71,11 +71,10 @@ public class FlywheelIOHardware implements FlywheelIO {
     private final StatusSignal<Temperature> followerTemperatureSignal;
     private final StatusSignal<Double> closedLoopReferenceSignal;
 
-    private final VelocityVoltage velocityControlRequest =
-            new VelocityVoltage(0.0).withSlot(0).withEnableFOC(false);
+    private final VelocityVoltage velocityControlRequest = new VelocityVoltage(0.0).withSlot(0);
     private final VelocityTorqueCurrentFOC velocityTorqueCurrentControlRequest =
             new VelocityTorqueCurrentFOC(0.0).withSlot(1);
-    private final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(false);
+    private final VoltageOut voltageOut = new VoltageOut(0.0);
 
     public FlywheelIOHardware() {
         this.leaderMotor = new TalonFX(leaderId, PhoenixCANBus.canivore());

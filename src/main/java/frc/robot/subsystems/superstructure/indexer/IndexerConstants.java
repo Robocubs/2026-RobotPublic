@@ -17,7 +17,7 @@ import static edu.wpi.first.units.Units.*;
 public final class IndexerConstants {
     public static final int motorId = 28;
 
-    public static final double gearReduction = 9.0;
+    public static final double gearReduction = 9.0 * 30.0 / 24.0;
     public static final Distance wheelRadius = Inches.of(4.0);
 
     public static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> velocityTolerance =

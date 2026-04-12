@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.superstructure.kicker;
 
+import com.ctre.phoenix6.signals.InvertedValue;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.RobotController;
@@ -23,6 +24,7 @@ public class KickerIOSim extends KickerIOHardware {
         var motorSim = new DCMotorSim(plant, gearbox);
 
         var motorSimState = motor.getSimState();
+        var inversionSign = motorConfig.MotorOutput.Inverted == InvertedValue.CounterClockwise_Positive ? 1.0 : -1.0;
 
         SimNotifier.register(deltaTime -> {
             motorSim.setInputVoltage(motorSimState.getMotorVoltage());
@@ -35,7 +37,7 @@ public class KickerIOSim extends KickerIOHardware {
             motorSimState.setRotorVelocity(velocity.times(KickerConstants.gearReduction));
             motorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
 
-            simRobotState.setKickerVelocity(velocity);
+            simRobotState.setKickerVelocity(velocity.times(inversionSign));
         });
     }
 }

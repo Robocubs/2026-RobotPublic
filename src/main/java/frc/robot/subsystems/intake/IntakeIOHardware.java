@@ -12,6 +12,7 @@ import com.ctre.phoenix6.StatusSignalCollection;
 import com.ctre.phoenix6.configs.ClosedLoopGeneralConfigs;
 import com.ctre.phoenix6.configs.CommutationConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.HardwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -26,6 +27,9 @@ import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.hardware.TalonFXS;
+import com.ctre.phoenix6.signals.ForwardLimitSourceValue;
+import com.ctre.phoenix6.signals.ForwardLimitTypeValue;
+import com.ctre.phoenix6.signals.ForwardLimitValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.MotorArrangementValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -35,7 +39,6 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.DigitalInput;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
 import frc.robot.PhoenixCANBus;
@@ -67,9 +70,6 @@ public class IntakeIOHardware implements IntakeIO {
             new LoggedTunableNumber("Intake/ExtensionKP", Constants.currentMode == Mode.SIM ? 1.0 : 1.0);
     private static final LoggedTunableNumber extensionKD = new LoggedTunableNumber("Intake/ExtensionKD", 0.0);
 
-    private final DigitalInput limitSwitch1 = new DigitalInput(0);
-    private final DigitalInput limitSwitch2 = new DigitalInput(6);
-
     protected final TalonFX leaderMotor;
     protected final TalonFX followerMotor;
     protected final TalonFXS extensionMotor1;
@@ -79,7 +79,9 @@ public class IntakeIOHardware implements IntakeIO {
     private final TalonFXSConfiguration extension1Config;
     private final TalonFXSConfiguration extension2Config;
 
-    private final StatusSignalCollection signals = new StatusSignalCollection();
+    private final StatusSignalCollection rollerSignals = new StatusSignalCollection();
+    private final StatusSignalCollection extensionSignals = new StatusSignalCollection();
+
     private final StatusSignal<Angle> leaderPositionSignal;
     private final StatusSignal<AngularVelocity> leaderVelocitySignal;
     private final StatusSignal<Voltage> leaderVoltageSignal;
@@ -100,6 +102,7 @@ public class IntakeIOHardware implements IntakeIO {
     private final StatusSignal<Current> extension1SupplyCurrentSignal;
     private final StatusSignal<Temperature> extension1TemperatureSignal;
     private final StatusSignal<Double> extension1ClosedLoopReferenceSignal;
+    private final StatusSignal<ForwardLimitValue> extension1ForwardLimitSignal;
 
     private final StatusSignal<Angle> extension2PositionSignal;
     private final StatusSignal<AngularVelocity> extension2VelocitySignal;
@@ -108,8 +111,9 @@ public class IntakeIOHardware implements IntakeIO {
     private final StatusSignal<Current> extension2SupplyCurrentSignal;
     private final StatusSignal<Temperature> extension2TemperatureSignal;
     private final StatusSignal<Double> extension2ClosedLoopReferenceSignal;
+    private final StatusSignal<ForwardLimitValue> extension2ForwardLimitSignal;
 
-    private final DutyCycleOut rollerDutyCycleControlRequest = new DutyCycleOut(0.0).withEnableFOC(false);
+    private final DutyCycleOut rollerDutyCycleControlRequest = new DutyCycleOut(0.0);
     private final DutyCycleOut extensionDutyCycleControlRequest = new DutyCycleOut(0.0);
     private final MotionMagicVoltage extensionMotionMagicControlRequest = new MotionMagicVoltage(0.0).withSlot(0);
     private final PositionVoltage extensionPositionControlRequest = new PositionVoltage(0.0).withSlot(1);
@@ -154,47 +158,20 @@ public class IntakeIOHardware implements IntakeIO {
                         .withReverseSoftLimitEnable(true)
                         .withReverseSoftLimitThreshold(
                                 minimumExtension.in(Meters) / distancePerRotation.in(Meters) * extensionReduction))
+                .withHardwareLimitSwitch(new HardwareLimitSwitchConfigs()
+                        .withForwardLimitEnable(true)
+                        .withForwardLimitSource(ForwardLimitSourceValue.LimitSwitchPin)
+                        .withForwardLimitType(ForwardLimitTypeValue.NormallyOpen))
                 .withCurrentLimits(new CurrentLimitsConfigs()
                         .withStatorCurrentLimit(Amps.of(30))
                         .withSupplyCurrentLimit(Amps.of(30))
                         .withSupplyCurrentLowerLimit(30));
 
-        extension2Config = new TalonFXSConfiguration()
-                .withCommutation(new CommutationConfigs().withMotorArrangement(MotorArrangementValue.Minion_JST))
+        extension2Config = extension1Config
+                .clone()
                 .withMotorOutput(new MotorOutputConfigs()
                         .withNeutralMode(NeutralModeValue.Coast)
-                        .withInverted(IntakeConstants.extension2MotorInvertedValue))
-                .withClosedLoopGeneral(new ClosedLoopGeneralConfigs().withContinuousWrap(false))
-                .withMotionMagic(new MotionMagicConfigs()
-                        .withMotionMagicCruiseVelocity(motionMagicMaxVelocity.get())
-                        .withMotionMagicAcceleration(motionMagicMaxAcceleration.get())
-                        .withMotionMagicExpo_kV(extensionKV.get())
-                        .withMotionMagicExpo_kA(extensionKA.get()))
-                .withSlot0(new Slot0Configs()
-                        .withKG(extensionKG.get())
-                        .withKS(extensionKS.get())
-                        .withKV(extensionKV.get())
-                        .withKA(extensionKA.get())
-                        .withKP(motionMagicKP.get())
-                        .withKD(motionMagicKD.get()))
-                .withSlot1(new Slot1Configs()
-                        .withKG(extensionKG.get())
-                        .withKS(extensionKS.get())
-                        .withKV(extensionKV.get())
-                        .withKA(extensionKA.get())
-                        .withKP(extensionKP.get())
-                        .withKD(extensionKD.get()))
-                .withSoftwareLimitSwitch(new SoftwareLimitSwitchConfigs()
-                        .withForwardSoftLimitEnable(true)
-                        .withForwardSoftLimitThreshold(
-                                maximumExtension.in(Meters) / distancePerRotation.in(Meters) * extensionReduction)
-                        .withReverseSoftLimitEnable(true)
-                        .withReverseSoftLimitThreshold(
-                                minimumExtension.in(Meters) / distancePerRotation.in(Meters) * extensionReduction))
-                .withCurrentLimits(new CurrentLimitsConfigs()
-                        .withStatorCurrentLimit(Amps.of(30))
-                        .withSupplyCurrentLimit(Amps.of(30))
-                        .withSupplyCurrentLowerLimit(30));
+                        .withInverted(IntakeConstants.extension2MotorInvertedValue));
 
         PhoenixUtil.tryUntilOk(() -> extensionMotor1.getConfigurator().apply(extension1Config));
         PhoenixUtil.tryUntilOk(() -> extensionMotor2.getConfigurator().apply(extension2Config));
@@ -234,6 +211,7 @@ public class IntakeIOHardware implements IntakeIO {
         extension1SupplyCurrentSignal = extensionMotor1.getSupplyCurrent();
         extension1TemperatureSignal = extensionMotor1.getDeviceTemp();
         extension1ClosedLoopReferenceSignal = extensionMotor1.getClosedLoopReference();
+        extension1ForwardLimitSignal = extensionMotor1.getForwardLimit();
 
         extension2PositionSignal = extensionMotor2.getPosition();
         extension2VelocitySignal = extensionMotor2.getRotorVelocity();
@@ -242,8 +220,9 @@ public class IntakeIOHardware implements IntakeIO {
         extension2SupplyCurrentSignal = extensionMotor2.getSupplyCurrent();
         extension2TemperatureSignal = extensionMotor2.getDeviceTemp();
         extension2ClosedLoopReferenceSignal = extensionMotor2.getClosedLoopReference();
+        extension2ForwardLimitSignal = extensionMotor2.getForwardLimit();
 
-        signals.addSignals(
+        rollerSignals.addSignals(
                 leaderPositionSignal,
                 leaderVelocitySignal,
                 leaderVoltageSignal,
@@ -255,7 +234,9 @@ public class IntakeIOHardware implements IntakeIO {
                 followerVoltageSignal,
                 followerStatorCurrentSignal,
                 followerSupplyCurrentSignal,
-                followerTemperatureSignal,
+                followerTemperatureSignal);
+
+        extensionSignals.addSignals(
                 extension1PositionSignal,
                 extension1VelocitySignal,
                 extension1VoltageSignal,
@@ -263,25 +244,29 @@ public class IntakeIOHardware implements IntakeIO {
                 extension1SupplyCurrentSignal,
                 extension1TemperatureSignal,
                 extension1ClosedLoopReferenceSignal,
+                extension1ForwardLimitSignal,
                 extension2PositionSignal,
                 extension2VelocitySignal,
                 extension2VoltageSignal,
                 extension2StatorCurrentSignal,
                 extension2SupplyCurrentSignal,
                 extension2TemperatureSignal,
-                extension2ClosedLoopReferenceSignal);
+                extension2ClosedLoopReferenceSignal,
+                extension2ForwardLimitSignal);
 
-        signals.setUpdateFrequencyForAll(Constants.mainLoopFrequency);
+        rollerSignals.setUpdateFrequencyForAll(Constants.mainLoopFrequency);
+        extensionSignals.setUpdateFrequencyForAll(Constants.mainLoopFrequency);
 
-        extensionMotor1.optimizeBusUtilization();
-        extensionMotor2.optimizeBusUtilization();
         leaderMotor.optimizeBusUtilization();
         followerMotor.optimizeBusUtilization();
+        extensionMotor1.optimizeBusUtilization();
+        extensionMotor2.optimizeBusUtilization();
     }
 
     @Override
     public void updateInputs(IntakeInputs inputs) {
-        signals.refreshAll();
+        rollerSignals.refreshAll();
+        extensionSignals.refreshAll();
 
         inputs.leaderPosition = leaderPositionSignal.getValue();
         inputs.leaderVelocity = leaderVelocitySignal.getValue();
@@ -327,8 +312,8 @@ public class IntakeIOHardware implements IntakeIO {
         inputs.extension2ClosedLoopReference = Meters.of(
                 extension2ClosedLoopReferenceSignal.getValue() / extensionReduction * distancePerRotation.in(Meters));
 
-        inputs.limitSwitch1 = !limitSwitch1.get();
-        inputs.limitSwitch2 = !limitSwitch2.get();
+        inputs.limitSwitch1 = extension1ForwardLimitSignal.getValue() == ForwardLimitValue.ClosedToGround;
+        inputs.limitSwitch2 = extension2ForwardLimitSignal.getValue() == ForwardLimitValue.ClosedToGround;
 
         LoggedTunableValue.ifChanged(
                 0,

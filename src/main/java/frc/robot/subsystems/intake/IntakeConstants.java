@@ -28,8 +28,8 @@ public final class IntakeConstants {
     public static final Mass mass = Kilograms.of(5);
     public static final Distance distancePerRotation = Inches.of(Math.PI / 10.0 * 20.0);
 
-    public static final InvertedValue extension1MotorInvertedValue = InvertedValue.CounterClockwise_Positive;
-    public static final InvertedValue extension2MotorInvertedValue = InvertedValue.Clockwise_Positive;
+    public static final InvertedValue extension1MotorInvertedValue = InvertedValue.Clockwise_Positive;
+    public static final InvertedValue extension2MotorInvertedValue = InvertedValue.CounterClockwise_Positive;
 
     public static final InvertedValue rollerMotorInvertedValue = InvertedValue.Clockwise_Positive;
 

@@ -38,16 +38,16 @@ public final class TurretConstants {
             (double) commonGearTeeth / (double) cancoder1Teeth * commonGearReduction;
     public static final double cancoder2Reduction =
             (double) commonGearTeeth / (double) cancoder2Teeth * commonGearReduction;
-    public static final Angle cancoder1Offset = Radians.of(2.876);
-    public static final Angle cancoder2Offset = Radians.of(1.940);
+    public static final Angle cancoder1Offset = Radians.of(2.663);
+    public static final Angle cancoder2Offset = Radians.of(-2.608);
     public static final Angle crtMatchTolerance = Radians.of(0.1);
     public static final boolean encoder1Inverted = true;
     public static final boolean encoder2Inverted = true;
 
-    public static final Angle crtMinAngle = Rotations.of(-0.5);
-    public static final Angle crtMaxAngle = Rotations.of(1.5);
-    public static final Angle minAngle = Degrees.of(-120);
-    public static final Angle maxAngle = Degrees.of(420);
+    public static final Angle crtMinAngle = Degrees.of(-470);
+    public static final Angle crtMaxAngle = Degrees.of(250);
+    public static final Angle minAngle = Degrees.of(-400);
+    public static final Angle maxAngle = Degrees.of(160);
     public static final Angle midAngle = maxAngle.minus(minAngle).div(2);
     public static final Angle minUnwrappedAngle = midAngle.minus(Radians.of(Math.PI));
     public static final Angle maxUnwrappedAngle = midAngle.plus(Radians.of(Math.PI));

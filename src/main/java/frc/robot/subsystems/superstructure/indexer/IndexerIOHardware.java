@@ -45,8 +45,7 @@ public class IndexerIOHardware implements IndexerIO {
     private static final LoggedTunableNumber kD = new LoggedTunableNumber("Indexer/kD", 0.0);
 
     protected final TalonFX motor;
-
-    private final TalonFXConfiguration motorConfig;
+    protected final TalonFXConfiguration motorConfig;
 
     private final StatusSignalCollection signals = new StatusSignalCollection();
     private final StatusSignal<Angle> positionSignal;
@@ -67,7 +66,7 @@ public class IndexerIOHardware implements IndexerIO {
         motorConfig = new TalonFXConfiguration()
                 .withMotorOutput(new MotorOutputConfigs()
                         .withNeutralMode(NeutralModeValue.Coast)
-                        .withInverted(InvertedValue.CounterClockwise_Positive))
+                        .withInverted(InvertedValue.Clockwise_Positive))
                 .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(gearReduction))
                 .withSlot0(new Slot0Configs()
                         .withKS(kS.get())

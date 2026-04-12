@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.superstructure.indexer;
 
+import com.ctre.phoenix6.signals.InvertedValue;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.RobotController;
@@ -24,6 +25,7 @@ public class IndexerIOSim extends IndexerIOHardware {
         var motorSim = new DCMotorSim(plant, gearbox);
 
         var motorSimState = motor.getSimState();
+        var inversionSign = motorConfig.MotorOutput.Inverted == InvertedValue.CounterClockwise_Positive ? 1.0 : -1.0;
 
         SimNotifier.register(deltaTime -> {
             motorSim.setInputVoltage(motorSimState.getMotorVoltage());
@@ -36,7 +38,7 @@ public class IndexerIOSim extends IndexerIOHardware {
             motorSimState.setRotorVelocity(velocity.times(gearReduction));
             motorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
 
-            simRobotState.setIndexerVelocity(velocity);
+            simRobotState.setIndexerVelocity(velocity.times(inversionSign));
         });
     }
 }

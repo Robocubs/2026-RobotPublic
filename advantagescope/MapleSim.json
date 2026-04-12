@@ -9,14 +9,7 @@
         "sidebar": {
           "width": 300,
           "expanded": [
-            "/RealOutputs/Vision/CameraTurret",
-            "/RealOutputs/Vision/CameraTurret/AcceptedPoses",
-            "/RealOutputs/Vision/CameraTurret/AcceptedPoses/0",
-            "/RealOutputs/Vision/CameraTurret/AcceptedPoses/0/rotation",
-            "/RealOutputs/Vision/CameraTurret/AcceptedPoses/0/translation",
-            "/RealOutputs",
-            "/Tuning",
-            "/RealOutputs/Simulation"
+            "/Tuning"
           ]
         },
         "tabs": {
@@ -122,6 +115,16 @@
                       "color": "#ff00ff",
                       "position": "center"
                     }
+                  },
+                  {
+                    "type": "ghost",
+                    "logKey": "/RealOutputs/RobotState/ExtendedHopperPose",
+                    "logType": "Pose3d",
+                    "visible": true,
+                    "options": {
+                      "model": "2026 KitBot",
+                      "color": "#ffff00"
+                    }
                   }
                 ],
                 "game": "FRC:2026 Field"
@@ -210,7 +213,17 @@
                   }
                 ],
                 "rightSources": [],
-                "discreteSources": [],
+                "discreteSources": [
+                  {
+                    "type": "stripes",
+                    "logKey": "/RealOutputs/Superstructure/State",
+                    "logType": "String",
+                    "visible": true,
+                    "options": {
+                      "color": "#e5b31b"
+                    }
+                  }
+                ],
                 "leftLockedRange": null,
                 "rightLockedRange": null,
                 "leftUnitConversion": {

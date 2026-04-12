@@ -15,6 +15,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.ElevatorSim;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
+import frc.robot.Constants;
 import frc.robot.simulation.SimNotifier;
 import frc.robot.simulation.SimRobotState;
 
@@ -42,8 +43,11 @@ public class IntakeIOSim extends IntakeIOHardware {
                 maximumExtension.in(Meters),
                 false,
                 initialPosition.in(Meters));
-        var extensionMotorSimState = extensionMotor1.getSimState();
-        extensionMotorSimState.setRawRotorPosition(
+        var extensionMotor1SimState = extensionMotor1.getSimState();
+        extensionMotor1SimState.setRawRotorPosition(
+                Rotations.of(initialPosition.in(Meters) / distancePerRotation.in(Meters) * extensionReduction));
+        var extensionMotor2SimState = extensionMotor2.getSimState();
+        extensionMotor2SimState.setRawRotorPosition(
                 Rotations.of(initialPosition.in(Meters) / distancePerRotation.in(Meters) * extensionReduction));
 
         SimNotifier.register(deltaTime -> {
@@ -62,17 +66,24 @@ public class IntakeIOSim extends IntakeIOHardware {
             followerMotorSimState.setRotorVelocity(rollerVelocity.times(rollerReduction));
             followerMotorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
 
-            extensionMotorSim.setInputVoltage(extensionMotorSimState.getMotorVoltage());
+            extensionMotorSim.setInputVoltage(extensionMotor1SimState.getMotorVoltage());
             extensionMotorSim.update(deltaTime.in(Seconds));
 
             var extensionPosition =
                     Rotations.of(extensionMotorSim.getPositionMeters() / distancePerRotation.in(Meters));
             var extensionVelocity = RotationsPerSecond.of(
                     extensionMotorSim.getVelocityMetersPerSecond() / distancePerRotation.in(Meters));
+            var isExtended = extensionMotorSim.getPositionMeters() > maximumExtension.in(Meters) - Constants.epsilon;
 
-            extensionMotorSimState.setRawRotorPosition(extensionPosition.times(extensionReduction));
-            extensionMotorSimState.setRotorVelocity(extensionVelocity.times(extensionReduction));
-            extensionMotorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
+            extensionMotor1SimState.setRawRotorPosition(extensionPosition.times(extensionReduction));
+            extensionMotor1SimState.setRotorVelocity(extensionVelocity.times(extensionReduction));
+            extensionMotor1SimState.setSupplyVoltage(RobotController.getBatteryVoltage());
+            extensionMotor1SimState.setForwardLimit(isExtended);
+
+            extensionMotor2SimState.setRawRotorPosition(extensionPosition.times(-extensionReduction));
+            extensionMotor2SimState.setRotorVelocity(extensionVelocity.times(-extensionReduction));
+            extensionMotor2SimState.setSupplyVoltage(RobotController.getBatteryVoltage());
+            extensionMotor2SimState.setForwardLimit(isExtended);
 
             var outputRollerVelocity =
                     rollerVelocity.times(rollerMotorInvertedValue == InvertedValue.CounterClockwise_Positive ? 1 : -1);

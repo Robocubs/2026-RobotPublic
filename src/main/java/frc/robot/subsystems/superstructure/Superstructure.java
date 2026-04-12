@@ -59,11 +59,11 @@ public class Superstructure extends SubsystemBase {
             new LoggedTunableMeasure<>("Superstructure/TurretAngle", Radians.of(0));
 
     private static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> indexerShootingVelocity =
-            new LoggedTunableMeasure<>("Superstructure/IndexerShootingVelocity", RadiansPerSecond.of(40));
+            new LoggedTunableMeasure<>("Superstructure/IndexerShootingVelocity", RadiansPerSecond.of(50));
     private static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> indexerReverseVelocity =
             new LoggedTunableMeasure<>("Superstructure/IndexerReverseVelocity", RadiansPerSecond.of(-20));
     private static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> kickerShootingVelocity =
-            new LoggedTunableMeasure<>("Superstructure/KickerShootingVelocity", RadiansPerSecond.of(120));
+            new LoggedTunableMeasure<>("Superstructure/KickerShootingVelocity", RadiansPerSecond.of(150));
 
     private static final LoggedTunableMeasure<TimeUnit, Time> timeToShoot =
             new LoggedTunableMeasure<>("Superstructure/TimeToShoot", Seconds.of(2));
@@ -104,7 +104,6 @@ public class Superstructure extends SubsystemBase {
         TUNING,
         TUNING_WARMING_UP,
         SCAN,
-        KICKER_INDEXER_AGITATE,
         TURRET_SYSID,
         HOOD_SYSID,
         FLYWHEEL_SYSID,
@@ -278,13 +277,6 @@ public class Superstructure extends SubsystemBase {
                 hood.stop();
                 turret.stop();
                 indexer.stop();
-            }
-            case KICKER_INDEXER_AGITATE -> {
-                flywheel.stop();
-                hood.stop();
-                turret.stop();
-                indexer.setVelocity(indexerShootingVelocity.get().times(-1.0));
-                kicker.setVelocity(kickerShootingVelocity.get().times(-1.0));
             }
             default -> {
                 flywheel.stop();

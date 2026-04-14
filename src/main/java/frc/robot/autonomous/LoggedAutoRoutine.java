@@ -156,6 +156,13 @@ public class LoggedAutoRoutine {
                 .get();
     }
 
+    public Pose2d getFinalPose(String pathName, int splitIndex) {
+        return routine.trajectory(pathName, splitIndex)
+                .getRawTrajectory()
+                .getFinalPose(false)
+                .get();
+    }
+
     public LoggedAutoRoutine resetPose(Pose2d pose) {
         commands.add(factory.resetOdometry(() -> Optional.of(GeometryUtil.autoFlip(pose))));
         pathBuilder.add(pose);
@@ -204,6 +211,14 @@ public class LoggedAutoRoutine {
         commands.add(drive.toPose(() -> initialPoseFlipped, true, slowMode)
                 .until(() ->
                         robotState.getPose().getTranslation().getDistance(initialPoseFlipped.getTranslation()) <= 0.2));
+        pathBuilder.add(initialPose);
+        return this;
+    }
+
+    public LoggedAutoRoutine driveToFinalPose(String pathName, int splitIndex, boolean finishAtGoal, boolean slowMode) {
+        var initialPose = getFinalPose(pathName, splitIndex);
+        var initialPoseFlipped = GeometryUtil.autoFlip(initialPose);
+        commands.add(drive.toPose(() -> initialPoseFlipped, finishAtGoal, slowMode));
         pathBuilder.add(initialPose);
         return this;
     }

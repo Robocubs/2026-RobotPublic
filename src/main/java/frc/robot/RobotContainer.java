@@ -141,13 +141,12 @@ public class RobotContainer {
 
         var autoRoutines = new AutoRoutines(drive, superstructureScheduler, intakeScheduler);
 
-        autoChooser.addRoutine("Demo", autoRoutines::demo);
-        autoChooser.addRoutine("Left", autoRoutines::Left);
-        autoChooser.addRoutine("Right", autoRoutines::Right);
-        autoChooser.addRoutine("NewLeftFinalVersion", autoRoutines::NewLeftFinalVersion);
-        autoChooser.addRoutine("NewRightFinalVersion", autoRoutines::NewRightFinalVersion);
-        autoChooser.addRoutine("StationToBump", autoRoutines::StationToBump);
-        autoChooser.addRoutine("ShootInPlace", autoRoutines::ShootInPlace);
+        autoChooser.addRoutine("FastLeftWithDepot", autoRoutines::fastLeftWithDepot);
+        autoChooser.addRoutine("FastLeft", autoRoutines::fastLeft);
+        autoChooser.addRoutine("NewLeftFinalVersion", autoRoutines::newLeftFinalVersion);
+        autoChooser.addRoutine("NewRightFinalVersion", autoRoutines::newRightFinalVersion);
+        autoChooser.addRoutine("StationToBump", autoRoutines::stationToBump);
+        autoChooser.addRoutine("ShootInPlace", autoRoutines::shootInPlace);
 
         if (Constants.characterizationEnabled) {
             var characterizationChooser = new LoggedAutoChooser("Characterization");

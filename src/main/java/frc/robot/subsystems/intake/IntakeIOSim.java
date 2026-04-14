@@ -50,6 +50,9 @@ public class IntakeIOSim extends IntakeIOHardware {
         extensionMotor2SimState.setRawRotorPosition(
                 Rotations.of(initialPosition.in(Meters) / distancePerRotation.in(Meters) * extensionReduction));
 
+        var rollerInversionValue = rollerMotorInvertedValue == InvertedValue.CounterClockwise_Positive ? 1 : -1;
+        var extensionInversionValue = extension1MotorInvertedValue == InvertedValue.CounterClockwise_Positive ? 1 : -1;
+
         SimNotifier.register(deltaTime -> {
             rollerMotorSim.setInputVoltage(leaderMotorSimState.getMotorVoltage());
             rollerMotorSim.update(deltaTime.in(Seconds));
@@ -66,14 +69,14 @@ public class IntakeIOSim extends IntakeIOHardware {
             followerMotorSimState.setRotorVelocity(rollerVelocity.times(rollerReduction));
             followerMotorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
 
-            extensionMotorSim.setInputVoltage(extensionMotor1SimState.getMotorVoltage());
+            extensionMotorSim.setInputVoltage(extensionMotor1SimState.getMotorVoltage() * extensionInversionValue);
             extensionMotorSim.update(deltaTime.in(Seconds));
 
-            var extensionPosition =
-                    Rotations.of(extensionMotorSim.getPositionMeters() / distancePerRotation.in(Meters));
-            var extensionVelocity = RotationsPerSecond.of(
-                    extensionMotorSim.getVelocityMetersPerSecond() / distancePerRotation.in(Meters));
-            var isExtended = extensionMotorSim.getPositionMeters() > maximumExtension.in(Meters) - Constants.epsilon;
+            var positionMeters = extensionMotorSim.getPositionMeters() * extensionInversionValue;
+            var velocityMetersPerSecond = extensionMotorSim.getVelocityMetersPerSecond() * extensionInversionValue;
+            var extensionPosition = Rotations.of(positionMeters / distancePerRotation.in(Meters));
+            var extensionVelocity = RotationsPerSecond.of(velocityMetersPerSecond / distancePerRotation.in(Meters));
+            var isExtended = positionMeters > maximumExtension.in(Meters) - Constants.epsilon;
 
             extensionMotor1SimState.setRawRotorPosition(extensionPosition.times(extensionReduction));
             extensionMotor1SimState.setRotorVelocity(extensionVelocity.times(extensionReduction));
@@ -85,10 +88,9 @@ public class IntakeIOSim extends IntakeIOHardware {
             extensionMotor2SimState.setSupplyVoltage(RobotController.getBatteryVoltage());
             extensionMotor2SimState.setForwardLimit(isExtended);
 
-            var outputRollerVelocity =
-                    rollerVelocity.times(rollerMotorInvertedValue == InvertedValue.CounterClockwise_Positive ? 1 : -1);
+            var outputRollerVelocity = rollerVelocity.times(rollerInversionValue);
             simRobotState.updateIntakeSim(
-                    Meters.of(extensionMotorSim.getPositionMeters()).gt(minIntakingExtension)
+                    Meters.of(positionMeters * extensionInversionValue).gt(minIntakingExtension)
                             && outputRollerVelocity.gt(minIntakingVelocity));
         });
     }

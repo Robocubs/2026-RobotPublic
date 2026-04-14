@@ -53,37 +53,33 @@ public class AutoRoutines {
         return new LoggedAutoRoutine(name, factory, drive, superstructure, intake);
     }
 
-    public AutoRoutine demo() {
-        return create("Demo")
-                .resetPose("Demo")
-                .followPath("Demo")
-                .driveToPose(new Pose2d(2.0, 2.0, Rotation2d.kZero))
-                .build();
-    }
-
-    public AutoRoutine Left() {
-        return create("Left")
-                .requireStartingPose("Left")
+    public AutoRoutine fastLeftWithDepot() {
+        return create("FastLeftWithDepot")
+                .requireStartingPose("FastLeft")
                 .intake()
                 .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
-                .followPath("Left")
+                .followPath("FastLeft", 0)
+                .shoot()
+                .followPath("FastLeft", 1)
                 .agitateIntake()
-                .shoot(11.4)
+                .driveToFinalPose("FastLeft", 1, false, true)
                 .build();
     }
 
-    public AutoRoutine Right() {
-        return create("Right")
-                .requireStartingPose("Right")
+    public AutoRoutine fastLeft() {
+        return create("FastLeft")
+                .requireStartingPose("FastLeft")
                 .intake()
                 .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
-                .followPath("Right")
+                .followPath("FastLeft", 0)
+                .shoot()
+                .driveToFinalPose("FastLeft", 1, true, true)
                 .agitateIntake()
-                .shoot(11.4)
+                .driveToFinalPose("FastLeft", 1, false, true)
                 .build();
     }
 
-    public AutoRoutine NewLeftFinalVersion() {
+    public AutoRoutine newLeftFinalVersion() {
         return create("NewLeftFinalVersion")
                 .requireStartingPose(leftStartingPose)
                 .intake()
@@ -95,7 +91,7 @@ public class AutoRoutines {
                 .build();
     }
 
-    public AutoRoutine NewRightFinalVersion() {
+    public AutoRoutine newRightFinalVersion() {
         return create("NewRightFinalVersion")
                 .requireStartingPose(rightStartingPose)
                 .intake()
@@ -107,7 +103,7 @@ public class AutoRoutines {
                 .build();
     }
 
-    public AutoRoutine StationToBump() {
+    public AutoRoutine stationToBump() {
         return create("StationToBump")
                 .intakeEfficient()
                 .shoot()
@@ -118,7 +114,7 @@ public class AutoRoutines {
                 .build();
     }
 
-    public AutoRoutine ShootInPlace() {
+    public AutoRoutine shootInPlace() {
         return create("ShootInPlace").shoot(20).build();
     }
 }

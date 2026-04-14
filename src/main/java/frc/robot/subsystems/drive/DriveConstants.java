@@ -83,9 +83,9 @@ public final class DriveConstants {
     public static final double rotationDeadband = 0.1;
 
     public static final LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity> maxSmoothSpeed =
-            new LoggedTunableMeasure<>("Drive/MaxSmoothSpeed", MetersPerSecond.of(1.5));
+            new LoggedTunableMeasure<>("Drive/MaxSmoothSpeed", MetersPerSecond.of(2.0));
     public static final LoggedTunableMeasure<LinearAccelerationUnit, LinearAcceleration> maxSmoothAcceleration =
-            new LoggedTunableMeasure<>("Drive/MaxSmoothAcceleration", MetersPerSecondPerSecond.of(9.0));
+            new LoggedTunableMeasure<>("Drive/MaxSmoothAcceleration", MetersPerSecondPerSecond.of(12.0));
 
     public static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> maxSmoothAngularVelocity =
             new LoggedTunableMeasure<>("Drive/MaxSmoothAngularVelocity", RadiansPerSecond.of(Math.PI * 1.0));

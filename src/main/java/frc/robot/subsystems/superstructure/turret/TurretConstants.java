@@ -48,7 +48,7 @@ public final class TurretConstants {
     public static final Angle crtMaxAngle = Degrees.of(250);
     public static final Angle minAngle = Degrees.of(-400);
     public static final Angle maxAngle = Degrees.of(160);
-    public static final Angle midAngle = maxAngle.minus(minAngle).div(2);
+    public static final Angle midAngle = maxAngle.plus(minAngle).div(2);
     public static final Angle minUnwrappedAngle = midAngle.minus(Radians.of(Math.PI));
     public static final Angle maxUnwrappedAngle = midAngle.plus(Radians.of(Math.PI));
     public static final boolean maxRangeLessThanOneRotation = maxAngle.in(Rotations) - minAngle.in(Rotations) <= 1.0;

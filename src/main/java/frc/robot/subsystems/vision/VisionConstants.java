@@ -33,7 +33,7 @@ public final class VisionConstants {
     public static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> maxRobotAngularVelocity =
             new LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity>(
                     "Vision/MaxRobotAngularVelocity",
-                    DriveConstants.maxSmoothAngularVelocity.get().times(1.1));
+                    DriveConstants.maxSmoothShootingAngularVelocity.get().times(1.1));
     public static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> maxTurretAngularVelocity =
             new LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity>(
                     "Vision/MaxTurretAngularVelocity", RadiansPerSecond.of(Math.PI * 0.5));

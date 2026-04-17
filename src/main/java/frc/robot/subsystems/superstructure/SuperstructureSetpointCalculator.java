@@ -70,7 +70,7 @@ public class SuperstructureSetpointCalculator {
     private static final double redPassingPointX = FieldConstants.redAllianceThreshold + 1.5;
 
     private static final double passingYMinOffset = 1.5;
-    private static final double passingYMaxOffset = 2.25;
+    private static final double passingYMaxOffset = 1.75;
 
     private static final double hubOffset = 0.3;
     private static final Translation2d blueHubFL = new Translation2d(

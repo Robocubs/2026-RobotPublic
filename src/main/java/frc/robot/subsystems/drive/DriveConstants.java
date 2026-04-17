@@ -82,14 +82,25 @@ public final class DriveConstants {
     public static final double translationDeadband = 0.1;
     public static final double rotationDeadband = 0.1;
 
-    public static final LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity> maxSmoothSpeed =
-            new LoggedTunableMeasure<>("Drive/MaxSmoothSpeed", MetersPerSecond.of(2.0));
-    public static final LoggedTunableMeasure<LinearAccelerationUnit, LinearAcceleration> maxSmoothAcceleration =
-            new LoggedTunableMeasure<>("Drive/MaxSmoothAcceleration", MetersPerSecondPerSecond.of(12.0));
+    public static final LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity> maxSmoothShootingSpeed =
+            new LoggedTunableMeasure<>("Drive/MaxSmoothShootingSpeed", MetersPerSecond.of(2.0));
+    public static final LoggedTunableMeasure<LinearAccelerationUnit, LinearAcceleration> maxSmoothShootingAcceleration =
+            new LoggedTunableMeasure<>("Drive/MaxSmoothShootingAcceleration", MetersPerSecondPerSecond.of(12.0));
 
-    public static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> maxSmoothAngularVelocity =
-            new LoggedTunableMeasure<>("Drive/MaxSmoothAngularVelocity", RadiansPerSecond.of(Math.PI * 1.0));
+    public static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> maxSmoothShootingAngularVelocity =
+            new LoggedTunableMeasure<>("Drive/MaxSmoothShootingAngularVelocity", RadiansPerSecond.of(Math.PI * 1.0));
     public static final LoggedTunableMeasure<AngularAccelerationUnit, AngularAcceleration>
-            maxSmoothAngularAcceleration = new LoggedTunableMeasure<>(
-                    "Drive/MaxSmoothAngularAcceleration", RadiansPerSecondPerSecond.of(Math.PI * 8.0));
+            maxSmoothShootingAngularAcceleration = new LoggedTunableMeasure<>(
+                    "Drive/MaxSmoothShootingAngularAcceleration", RadiansPerSecondPerSecond.of(Math.PI * 8.0));
+
+    public static final LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity> maxSmoothPassingSpeed =
+            new LoggedTunableMeasure<>("Drive/MaxSmoothPassingSpeed", MetersPerSecond.of(3.0));
+    public static final LoggedTunableMeasure<LinearAccelerationUnit, LinearAcceleration> maxSmoothPassingAcceleration =
+            new LoggedTunableMeasure<>("Drive/MaxSmoothPassingAcceleration", MetersPerSecondPerSecond.of(18.0));
+
+    public static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> maxSmoothPassingAngularVelocity =
+            new LoggedTunableMeasure<>("Drive/MaxSmoothPassingAngularVelocity", RadiansPerSecond.of(Math.PI * 1.0));
+    public static final LoggedTunableMeasure<AngularAccelerationUnit, AngularAcceleration>
+            maxSmoothPassingAngularAcceleration = new LoggedTunableMeasure<>(
+                    "Drive/MaxSmoothPassingAngularAcceleration", RadiansPerSecondPerSecond.of(Math.PI * 8.0));
 }

@@ -54,7 +54,8 @@ public class DriveCommands {
             DoubleSupplier xSupplier,
             DoubleSupplier ySupplier,
             DoubleSupplier omegaSupplier,
-            BooleanSupplier smooth) {
+            BooleanSupplier smoothShooting,
+            BooleanSupplier smoothPassing) {
         var state = new JoystickDriveState();
         var smoothController = new SmoothDriveController();
 
@@ -65,8 +66,9 @@ public class DriveCommands {
                 })
                 .andThen(Commands.run(() -> {
                     smoothController.updateLoopTime();
-
-                    var useSmooth = smooth.getAsBoolean();
+                    var useSmoothShooting = smoothShooting.getAsBoolean();
+                    var useSmoothPassing = smoothPassing.getAsBoolean();
+                    var useSmooth = useSmoothShooting || useSmoothPassing;
                     if (!useSmooth) {
                         smoothController.updateFromMeasuredValues();
                     }
@@ -75,8 +77,10 @@ public class DriveCommands {
                             getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
                     var omega = MathUtil.applyDeadband(omegaSupplier.getAsDouble(), DriveConstants.rotationDeadband);
 
-                    if (useSmooth) {
-                        linearVelocity = smoothController.smoothLinearVelocity(linearVelocity);
+                    if (useSmoothShooting) {
+                        linearVelocity = smoothController.smoothShootingLinearVelocity(linearVelocity);
+                    } else if (useSmoothPassing) {
+                        linearVelocity = smoothController.smoothPassingLinearVelocity(linearVelocity);
                     }
 
                     var rotationDemandIsZero = MathUtil.isNear(0.0, omega, Constants.epsilon);
@@ -110,8 +114,10 @@ public class DriveCommands {
                     omega = Math.copySign(omega * omega, omega)
                             * DriveConstants.maxAngularVelocity.in(RadiansPerSecond);
 
-                    if (useSmooth) {
-                        omega = smoothController.smoothAngularVelocity(omega);
+                    if (useSmoothShooting) {
+                        omega = smoothController.smoothShootingAngularVelocity(omega);
+                    } else if (useSmoothPassing) {
+                        omega = smoothController.smoothPassingAngularVelocity(omega);
                     }
 
                     drive.setFieldSpeeds(new ChassisSpeeds(linearVelocity.getX(), linearVelocity.getY(), omega));
@@ -124,7 +130,8 @@ public class DriveCommands {
             DoubleSupplier xSupplier,
             DoubleSupplier ySupplier,
             Supplier<Rotation2d> rotationSupplier,
-            BooleanSupplier smooth) {
+            BooleanSupplier smoothShooting,
+            BooleanSupplier smoothPassing) {
         var smoothController = new SmoothDriveController();
 
         return drive.runOnce(() -> {
@@ -137,8 +144,10 @@ public class DriveCommands {
                             getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
                     var headingGoal = rotationSupplier.get();
 
-                    if (smooth.getAsBoolean()) {
-                        linearVelocity = smoothController.smoothLinearVelocity(linearVelocity);
+                    if (smoothShooting.getAsBoolean()) {
+                        linearVelocity = smoothController.smoothShootingLinearVelocity(linearVelocity);
+                    } else if (smoothPassing.getAsBoolean()) {
+                        linearVelocity = smoothController.smoothPassingLinearVelocity(linearVelocity);
                     } else {
                         smoothController.updateFromMeasuredValues();
                     }

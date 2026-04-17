@@ -30,8 +30,8 @@ public class SmoothDriveController {
     }
 
     public void updateFromMeasuredValues() {
-        var maxSpeed = DriveConstants.maxSmoothSpeed.get().in(MetersPerSecond);
-        var maxOmega = DriveConstants.maxSmoothAngularVelocity.get().in(RadiansPerSecond);
+        var maxSpeed = DriveConstants.maxSmoothShootingSpeed.get().in(MetersPerSecond);
+        var maxOmega = DriveConstants.maxSmoothShootingAngularVelocity.get().in(RadiansPerSecond);
         var speeds = RobotState.getInstance().getFieldVelocity();
 
         var speedsTranslation = new Translation2d(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
@@ -48,9 +48,31 @@ public class SmoothDriveController {
         updateFromMeasuredValues();
     }
 
-    public Translation2d smoothLinearVelocity(Translation2d targetVelocity) {
-        var maxSpeed = DriveConstants.maxSmoothSpeed.get().in(MetersPerSecond);
-        var maxAcceleration = DriveConstants.maxSmoothAcceleration.get().in(MetersPerSecondPerSecond);
+    public Translation2d smoothShootingLinearVelocity(Translation2d targetVelocity) {
+        var maxSpeed = DriveConstants.maxSmoothShootingSpeed.get().in(MetersPerSecond);
+        var maxAcceleration = DriveConstants.maxSmoothShootingAcceleration.get().in(MetersPerSecondPerSecond);
+        return smoothLinearVelocity(targetVelocity, maxSpeed, maxAcceleration);
+    }
+
+    public Translation2d smoothPassingLinearVelocity(Translation2d targetVelocity) {
+        var maxSpeed = DriveConstants.maxSmoothPassingSpeed.get().in(MetersPerSecond);
+        var maxAcceleration = DriveConstants.maxSmoothPassingAcceleration.get().in(MetersPerSecondPerSecond);
+        return smoothLinearVelocity(targetVelocity, maxSpeed, maxAcceleration);
+    }
+
+    public double smoothShootingAngularVelocity(double targetOmega) {
+        var maxOmega = DriveConstants.maxSmoothShootingAngularVelocity.get().in(RadiansPerSecond);
+        var maxAlpha = DriveConstants.maxSmoothShootingAngularAcceleration.get().in(RadiansPerSecondPerSecond);
+        return smoothAngularVelocity(targetOmega, maxOmega, maxAlpha);
+    }
+
+    public double smoothPassingAngularVelocity(double targetOmega) {
+        var maxOmega = DriveConstants.maxSmoothPassingAngularVelocity.get().in(RadiansPerSecond);
+        var maxAlpha = DriveConstants.maxSmoothPassingAngularAcceleration.get().in(RadiansPerSecondPerSecond);
+        return smoothAngularVelocity(targetOmega, maxOmega, maxAlpha);
+    }
+
+    private Translation2d smoothLinearVelocity(Translation2d targetVelocity, double maxSpeed, double maxAcceleration) {
         var velocityDeltaLimit = maxAcceleration * loopDeltaTimeSeconds;
 
         // Limit to max speed
@@ -65,14 +87,11 @@ public class SmoothDriveController {
             velocityDelta = velocityDelta.times(velocityDeltaLimit / deltaNorm);
             newVelocity = previousVelocity.plus(velocityDelta);
         }
-
         previousVelocity = newVelocity;
         return newVelocity;
     }
 
-    public double smoothAngularVelocity(double targetOmega) {
-        var maxOmega = DriveConstants.maxSmoothAngularVelocity.get().in(RadiansPerSecond);
-        var maxAlpha = DriveConstants.maxSmoothAngularAcceleration.get().in(RadiansPerSecondPerSecond);
+    private double smoothAngularVelocity(double targetOmega, double maxOmega, double maxAlpha) {
         var omegaDeltaLimit = maxAlpha * loopDeltaTimeSeconds;
 
         // Limit to max speed
@@ -83,7 +102,6 @@ public class SmoothDriveController {
         if (Math.abs(omegaDelta) > omegaDeltaLimit) {
             newOmega = previousOmega + Math.copySign(omegaDeltaLimit, omegaDelta);
         }
-
         previousOmega = newOmega;
         return newOmega;
     }

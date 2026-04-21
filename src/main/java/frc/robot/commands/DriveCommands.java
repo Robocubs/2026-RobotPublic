@@ -162,6 +162,26 @@ public class DriveCommands {
                 .withName("JoystickDriveAtAngle");
     }
 
+    public static Command oscillate(Drive drive) {
+        var smoothController = new SmoothDriveController();
+        var timer = new Timer();
+        // Square wave flips every 0.5s —> smooth controller ramps to it under maxSmoothAcceleration.
+        return drive.runOnce(() -> {
+                    timer.restart();
+                    smoothController.resetFromMeasuredValues();
+                })
+                .andThen(drive.run(() -> {
+                    smoothController.updateLoopTime();
+                    double side = (timer.get() % 1.0) < 0.5 ? 1.0 : -1.0;
+                    var target = new Translation2d(
+                            0,
+                            side * DriveConstants.maxSmoothShootingSpeed.get().in(MetersPerSecond));
+                    var smoothed = smoothController.smoothShootingLinearVelocity(target);
+                    drive.setRobotSpeeds(new ChassisSpeeds(0, smoothed.getY(), 0));
+                }))
+                .withName("DriveOscillate");
+    }
+
     private static class JoystickDriveState {
         Optional<Rotation2d> headingSetpoint = Optional.empty();
         double joystickLastTouched = 0.0;

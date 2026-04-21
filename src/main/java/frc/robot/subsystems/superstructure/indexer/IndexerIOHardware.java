@@ -76,8 +76,8 @@ public class IndexerIOHardware implements IndexerIO {
                         .withKD(kD.get()))
                 .withCurrentLimits(new CurrentLimitsConfigs()
                         .withStatorCurrentLimit(Amps.of(80))
-                        .withSupplyCurrentLimit(Amps.of(35))
-                        .withSupplyCurrentLowerLimit(Amps.of(35)));
+                        .withSupplyCurrentLimit(Amps.of(30))
+                        .withSupplyCurrentLowerLimit(Amps.of(30)));
         PhoenixUtil.tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
 
         positionSignal = motor.getPosition();

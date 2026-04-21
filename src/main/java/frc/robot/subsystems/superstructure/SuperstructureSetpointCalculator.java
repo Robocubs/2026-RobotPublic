@@ -36,13 +36,13 @@ public class SuperstructureSetpointCalculator {
             new LoggedTunableBoolean("SuperstructureSetpointCalculator/TurretRotationalVelocityCompensation", true);
 
     private static final InterpolatingDoubleTreeMap flywheelMap = InterpolatingDoubleTreeMap.ofEntries(
-            Map.entry(1.17, 250.0),
-            Map.entry(1.84, 265.0),
-            Map.entry(2.75, 280.0),
-            Map.entry(3.66, 290.0),
-            Map.entry(4.50, 305.0),
-            Map.entry(5.30, 322.5),
-            Map.entry(6.20, 340.0));
+            Map.entry(1.17, 245.0),
+            Map.entry(1.84, 260.0),
+            Map.entry(2.75, 275.0),
+            Map.entry(3.66, 285.0),
+            Map.entry(4.50, 300.0),
+            Map.entry(5.30, 317.5),
+            Map.entry(6.20, 335.0));
     private static final InterpolatingDoubleTreeMap hoodMap = InterpolatingDoubleTreeMap.ofEntries(
             Map.entry(1.17, 0.25),
             Map.entry(1.84, 0.35),

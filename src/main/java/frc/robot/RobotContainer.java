@@ -147,6 +147,7 @@ public class RobotContainer {
         autoChooser.addRoutine("NewRightFinalVersion", autoRoutines::newRightFinalVersion);
         autoChooser.addRoutine("StationToBump", autoRoutines::stationToBump);
         autoChooser.addRoutine("ShootInPlace", autoRoutines::shootInPlace);
+        autoChooser.addRoutine("HairpinDepot", autoRoutines::hairpinDepot);
 
         if (Constants.characterizationEnabled) {
             var characterizationChooser = new LoggedAutoChooser("Characterization");
@@ -206,7 +207,11 @@ public class RobotContainer {
         driverController.a().onTrue(intake.stop());
         driverController.x().onTrue(intake.zeroRoutine());
         driverController.b().onTrue(intake.stow());
-        driverController.povDown().whileTrue(intake.reverse()).onFalse(intake.intakeEfficient());
+        driverController.povDown().whileTrue(intake.reverse());
+        driverController.povUp().whileTrue(superstructure.unjam());
+        driverController
+                .povRight()
+                .whileTrue(parallel(intake.reverse(), superstructure.reverse()).withName("ReverseAll"));
 
         // Dashboard bindings
         SmartDashboard.putData("ZeroIntake", intake.zeroRoutine());

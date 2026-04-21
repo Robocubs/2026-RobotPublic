@@ -99,7 +99,7 @@ public class FlywheelIOHardware implements FlywheelIO {
                         .withKD(torqueKD.get()))
                 .withCurrentLimits(new CurrentLimitsConfigs()
                         .withStatorCurrentLimit(Amps.of(160))
-                        .withSupplyCurrentLimit(Amps.of(80))
+                        .withSupplyCurrentLimit(Amps.of(40))
                         .withSupplyCurrentLowerLimit(Amps.of(40)));
 
         PhoenixUtil.tryUntilOk(() -> leaderMotor.getConfigurator().apply(motorConfig));

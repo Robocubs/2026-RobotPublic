@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants;
 import frc.robot.RobotState;
+import frc.robot.commands.DriveCommands;
 import frc.robot.commands.SubsystemScheduler;
 import frc.robot.commands.logging.LoggedCommands;
 import frc.robot.subsystems.drive.Drive;
@@ -47,7 +48,7 @@ public class LoggedAutoRoutine {
     private final SubsystemScheduler<Intake> intake;
 
     private boolean bound = false;
-    private static final Pose2d stationPose = new Pose2d(0.503, 0.523, Rotation2d.kCW_90deg);
+    private static final Pose2d stationPose = new Pose2d(0.688, 0.643, Rotation2d.kZero);
 
     public LoggedAutoRoutine(
             String name,
@@ -301,6 +302,14 @@ public class LoggedAutoRoutine {
                 // Hold the robot still while shooting for shootSeconds, then the sequence continues
                 Commands.waitSeconds(shootSeconds),
                 drive.withRobotSpeeds(() -> new ChassisSpeeds()),
+                superstructure.schedule(s -> s.shoot())));
+        return this;
+    }
+
+    public LoggedAutoRoutine shootAndOscillate(double seconds) {
+        commands.add(deadline(
+                Commands.waitSeconds(seconds),
+                DriveCommands.oscillate(drive),
                 superstructure.schedule(s -> s.shoot())));
         return this;
     }

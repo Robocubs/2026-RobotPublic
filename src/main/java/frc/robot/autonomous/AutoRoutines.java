@@ -21,8 +21,8 @@ import frc.robot.util.GeometryUtil;
 import org.littletonrobotics.junction.Logger;
 
 public class AutoRoutines {
-    private static final Pose2d leftStartingPose = new Pose2d(3.45, 5.6, Rotation2d.fromDegrees(135));
-    private static final Pose2d rightStartingPose = new Pose2d(3.45, 2.4, Rotation2d.fromDegrees(-135));
+    private static final Pose2d leftStartingPose = new Pose2d(3.45, 5.6, Rotation2d.fromDegrees(180));
+    private static final Pose2d rightStartingPose = new Pose2d(3.45, 2.4, Rotation2d.fromDegrees(-180));
 
     private final RobotState robotState = RobotState.getInstance();
     private final Drive drive;
@@ -108,13 +108,27 @@ public class AutoRoutines {
                 .intakeEfficient()
                 .shoot()
                 .driveToStation(3)
-                .followPath("StationToBump", 0)
+                .followPath("StationToBump")
                 .agitateIntake()
                 .shoot(15)
                 .build();
     }
 
+    public AutoRoutine hairpinDepot() {
+        return create("HairpinDepot")
+                .requireStartingPose(leftStartingPose)
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .driveToInitialPose("HairpinDepot", true)
+                .followPath("HairpinDepot", 0)
+                .shoot()
+                .followPath("HairpinDepot", 1)
+                .agitateIntake()
+                .driveToFinalPose("HairpinDepot", 1, false, true)
+                .build();
+    }
+
     public AutoRoutine shootInPlace() {
-        return create("ShootInPlace").shoot(20).build();
+        return create("ShootInPlace").shootAndOscillate(20).build();
     }
 }

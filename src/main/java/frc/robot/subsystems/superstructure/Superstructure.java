@@ -13,11 +13,9 @@ import java.util.function.Supplier;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.AngleUnit;
 import edu.wpi.first.units.AngularVelocityUnit;
-import edu.wpi.first.units.CurrentUnit;
 import edu.wpi.first.units.TimeUnit;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -64,6 +62,8 @@ public class Superstructure extends SubsystemBase {
             new LoggedTunableMeasure<>("Superstructure/IndexerReverseVelocity", RadiansPerSecond.of(-20));
     private static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> kickerShootingVelocity =
             new LoggedTunableMeasure<>("Superstructure/KickerShootingVelocity", RadiansPerSecond.of(150));
+    private static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> kickerReverseVelocity =
+            new LoggedTunableMeasure<>("Superstructure/KickerReverseVelocity", RadiansPerSecond.of(-20));
 
     private static final LoggedTunableMeasure<TimeUnit, Time> timeToShoot =
             new LoggedTunableMeasure<>("Superstructure/TimeToShoot", Seconds.of(2));
@@ -71,12 +71,6 @@ public class Superstructure extends SubsystemBase {
             new LoggedTunableMeasure<>("Superstructure/TimeToScan", Seconds.of(5));
     private static final LoggedTunableNumber requiredScanMeasurementCount =
             new LoggedTunableNumber("Superstructure/RequiredScanMeasurementCount", 7);
-
-    private static final LoggedTunableMeasure<CurrentUnit, Current> flywheelCurrentThreshold =
-            new LoggedTunableMeasure<>("Superstructure/FlywheelCurrentThreshold", Amps.of(5));
-
-    private final Debouncer agitateDebouncer = new Debouncer(2.0, Debouncer.DebounceType.kRising);
-    private final Debouncer agitateTimeoutDebouncer = new Debouncer(0.75, Debouncer.DebounceType.kRising);
 
     private final RobotState robotState = RobotState.getInstance();
     private final Flywheel flywheel;
@@ -90,7 +84,6 @@ public class Superstructure extends SubsystemBase {
     private final TrapezoidProfileController scanController = new TrapezoidProfileController(Math.PI / 2, 10.0);
 
     private @AutoLogOutput @Getter SuperstructureState state = SuperstructureState.STOP;
-    private @AutoLogOutput boolean shouldUnjam = false;
     private int lastScanVisionMeasurementCount = 0;
 
     public static enum SuperstructureState {
@@ -104,6 +97,8 @@ public class Superstructure extends SubsystemBase {
         TUNING,
         TUNING_WARMING_UP,
         SCAN,
+        REVERSE,
+        UNJAM,
         TURRET_SYSID,
         HOOD_SYSID,
         FLYWHEEL_SYSID,
@@ -140,20 +135,6 @@ public class Superstructure extends SubsystemBase {
             superstructureSetpointCalculator.resetPassingTarget();
         }
 
-        if (state != SuperstructureState.SHOOTING_HUB
-                        && state != SuperstructureState.FEEDING
-                        && state != SuperstructureState.TUNING
-                || turret.getWrappingState() != WrappingState.NOT_WRAPPING) {
-            shouldUnjam = false;
-            agitateDebouncer.calculate(false);
-        } else if (agitateTimeoutDebouncer.calculate(shouldUnjam)) {
-            shouldUnjam = false;
-            agitateDebouncer.calculate(false);
-        } else if (!shouldUnjam) {
-            shouldUnjam =
-                    agitateDebouncer.calculate(flywheel.getLeaderSupplyCurrent().lt(flywheelCurrentThreshold.get()));
-        }
-
         switch (state) {
             case TRACKING_HUB_FOR_POSE -> {
                 var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForTrackingPose();
@@ -165,7 +146,7 @@ public class Superstructure extends SubsystemBase {
             }
             case TRACKING_HUB_FOR_POSE_IDLE -> {
                 var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForTrackingPose();
-                flywheel.setVelocity(RadiansPerSecond.zero());
+                flywheel.stop();
                 hood.setAngle(superstructureSetpoint.hoodAngle);
                 turret.setAngle(superstructureSetpoint.turretAngle, superstructureSetpoint.turretVelocity);
                 indexer.stop();
@@ -179,9 +160,6 @@ public class Superstructure extends SubsystemBase {
                 if (turret.getWrappingState() != WrappingState.NOT_WRAPPING) {
                     indexer.setVelocity(indexerReverseVelocity.get());
                     kicker.stop();
-                } else if (shouldUnjam) {
-                    indexer.setVelocity(indexerShootingVelocity.get().times(-1.0));
-                    kicker.setVelocity(kickerShootingVelocity.get());
                 } else {
                     indexer.setVelocity(indexerShootingVelocity.get());
                     kicker.setVelocity(kickerShootingVelocity.get());
@@ -211,9 +189,6 @@ public class Superstructure extends SubsystemBase {
                 if (turret.getWrappingState() != WrappingState.NOT_WRAPPING) {
                     indexer.setVelocity(indexerReverseVelocity.get());
                     kicker.stop();
-                } else if (shouldUnjam) {
-                    indexer.setVelocity(indexerShootingVelocity.get().times(-1.0));
-                    kicker.setVelocity(kickerShootingVelocity.get());
                 } else {
                     indexer.setVelocity(indexerShootingVelocity.get());
                     kicker.setVelocity(kickerShootingVelocity.get());
@@ -229,24 +204,39 @@ public class Superstructure extends SubsystemBase {
                 indexer.stop();
                 kicker.stop();
             }
+            case REVERSE -> {
+                var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForTrackingPose();
+                flywheel.stop();
+                hood.setAngle(superstructureSetpoint.hoodAngle);
+                turret.setAngle(superstructureSetpoint.turretAngle, superstructureSetpoint.turretVelocity);
+                indexer.setVelocity(indexerReverseVelocity.get());
+                kicker.setVelocity(kickerReverseVelocity.get());
+            }
+            case UNJAM -> {
+                var superstructureSetpoint = superstructureSetpointCalculator.getSetpointForShooting();
+                flywheel.setVelocity(superstructureSetpoint.flywheelVelocity);
+                hood.setAngle(superstructureSetpoint.hoodAngle);
+                turret.setAngle(superstructureSetpoint.turretAngle, superstructureSetpoint.turretVelocity);
+                indexer.setVelocity(indexerReverseVelocity.get());
+                if (turret.getWrappingState() != WrappingState.NOT_WRAPPING) {
+                    kicker.stop();
+                } else {
+                    kicker.setVelocity(kickerShootingVelocity.get());
+                }
+            }
             case TUNING -> {
                 flywheel.setVelocity(flywheelVelocity.get());
                 hood.setAngle(tunedHoodAngle.get());
                 turret.setAngle(tunedTurretAngle.get());
-                if (shouldUnjam) {
-                    indexer.setVelocity(indexerShootingVelocity.get().times(-1.0));
-                    kicker.setVelocity(kickerShootingVelocity.get());
-                } else {
-                    indexer.setVelocity(indexerShootingVelocity.get());
-                    kicker.setVelocity(kickerShootingVelocity.get());
-                }
+                indexer.setVelocity(indexerShootingVelocity.get());
+                kicker.setVelocity(kickerShootingVelocity.get());
             }
             case TUNING_WARMING_UP -> {
                 flywheel.setVelocity(flywheelVelocity.get());
                 hood.setAngle(tunedHoodAngle.get());
                 turret.setAngle(tunedTurretAngle.get());
-                indexer.setVelocity(RadiansPerSecond.zero());
-                kicker.setVelocity(RadiansPerSecond.zero());
+                indexer.stop();
+                kicker.stop();
             }
             case FLYWHEEL_SYSID -> {
                 hood.stop();
@@ -359,6 +349,14 @@ public class Superstructure extends SubsystemBase {
                     }
                 }))
                 .withName("Superstructure/Feed");
+    }
+
+    public Command reverse() {
+        return run(() -> applyState(SuperstructureState.REVERSE)).withName("Superstructure/Reverse");
+    }
+
+    public Command unjam() {
+        return run(() -> applyState(SuperstructureState.UNJAM)).withName("Superstructure/Unjam");
     }
 
     public Command trackingHubForPose() {

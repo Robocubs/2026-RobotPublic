@@ -14,6 +14,7 @@ import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -75,9 +76,12 @@ public class IndexerIOHardware implements IndexerIO {
                         .withKP(kP.get())
                         .withKD(kD.get()))
                 .withCurrentLimits(new CurrentLimitsConfigs()
-                        .withStatorCurrentLimit(Amps.of(80))
-                        .withSupplyCurrentLimit(Amps.of(30))
-                        .withSupplyCurrentLowerLimit(Amps.of(30)));
+                        .withStatorCurrentLimit(Amps.of(100))
+                        .withSupplyCurrentLimit(Amps.of(50))
+                        .withSupplyCurrentLowerLimit(Amps.of(40)))
+                .withTorqueCurrent(new TorqueCurrentConfigs()
+                        .withPeakForwardTorqueCurrent(Amps.of(100))
+                        .withPeakReverseTorqueCurrent(80));
         PhoenixUtil.tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
 
         positionSignal = motor.getPosition();

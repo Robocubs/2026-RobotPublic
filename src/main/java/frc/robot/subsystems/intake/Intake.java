@@ -95,7 +95,7 @@ public class Intake extends SubsystemBase {
     }
 
     public Command intakeEfficient() {
-        var debouncer = new Debouncer(1.0, DebounceType.kFalling);
+        var debouncer = new Debouncer(1.0, DebounceType.kRising);
         return run(() -> runSetpoint(IntakeConstants.extendedPosition, 0.0))
                 .until(() -> inputs.extension1Position.gt(IntakeConstants.extendedRollerActivationPosition)
                         && inputs.extension2Position.gt(IntakeConstants.extendedRollerActivationPosition))
@@ -105,14 +105,18 @@ public class Intake extends SubsystemBase {
                     // Run intake if robot is moving toward intake or spinning
                     double rollerOutput;
                     var robotVelocity = RobotState.getInstance().getTargetRobotVelocity();
-                    if (!debouncer.calculate(robotVelocity.vxMetersPerSecond < Constants.epsilon
-                            || !MathUtil.isNear(0, robotVelocity.omegaRadiansPerSecond, 0.1))) {
+                    var minOutput = 0.7;
+                    if (debouncer.calculate(robotVelocity.vxMetersPerSecond > -Constants.epsilon
+                            && MathUtil.isNear(0, robotVelocity.omegaRadiansPerSecond, 0.1))) {
                         rollerOutput = 0.0;
                     } else if (robotVelocity.vxMetersPerSecond > -DriveConstants.maxSpeed.in(MetersPerSecond) / 2) {
-                        rollerOutput = 0.5;
+                        rollerOutput = minOutput;
                     } else {
-                        var maxVelocity = DriveConstants.maxSpeed.in(MetersPerSecond);
-                        rollerOutput = Math.abs(robotVelocity.vxMetersPerSecond) / maxVelocity;
+                        var halfMaxVelocity = DriveConstants.maxSpeed.in(MetersPerSecond);
+                        rollerOutput = (Math.abs(robotVelocity.vxMetersPerSecond) - halfMaxVelocity)
+                                        / halfMaxVelocity
+                                        * (1 - minOutput)
+                                + minOutput;
                     }
 
                     runSetpoint(IntakeConstants.extendedPosition, rollerOutput);

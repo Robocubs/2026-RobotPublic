@@ -182,8 +182,8 @@ public class IntakeIOHardware implements IntakeIO {
                         .withInverted(rollerMotorInvertedValue))
                 .withCurrentLimits(new CurrentLimitsConfigs()
                         .withStatorCurrentLimit(Amps.of(120))
-                        .withSupplyCurrentLimit(Amps.of(40))
-                        .withSupplyCurrentLowerLimit(30));
+                        .withSupplyCurrentLimit(Amps.of(50))
+                        .withSupplyCurrentLowerLimit(40));
 
         PhoenixUtil.tryUntilOk(() -> leaderMotor.getConfigurator().apply(rollerConfig));
         PhoenixUtil.tryUntilOk(() -> followerMotor.getConfigurator().apply(rollerConfig));

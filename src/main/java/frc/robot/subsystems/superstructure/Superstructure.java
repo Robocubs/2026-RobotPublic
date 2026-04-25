@@ -57,7 +57,7 @@ public class Superstructure extends SubsystemBase {
             new LoggedTunableMeasure<>("Superstructure/TurretAngle", Radians.of(0));
 
     private static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> indexerShootingVelocity =
-            new LoggedTunableMeasure<>("Superstructure/IndexerShootingVelocity", RadiansPerSecond.of(50));
+            new LoggedTunableMeasure<>("Superstructure/IndexerShootingOutput", RadiansPerSecond.of(50));
     private static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> indexerReverseVelocity =
             new LoggedTunableMeasure<>("Superstructure/IndexerReverseVelocity", RadiansPerSecond.of(-20));
     private static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> kickerShootingVelocity =
@@ -161,7 +161,8 @@ public class Superstructure extends SubsystemBase {
                     indexer.setVelocity(indexerReverseVelocity.get());
                     kicker.stop();
                 } else {
-                    indexer.setVelocity(indexerShootingVelocity.get());
+                    // indexer.setVelocity(indexerShootingVelocity.get());
+                    indexer.setOutput(1.0);
                     kicker.setVelocity(kickerShootingVelocity.get());
                 }
             }

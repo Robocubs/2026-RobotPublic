@@ -22,7 +22,7 @@ public final class IntakeConstants {
     public static final int extensionMotor2Id = 22;
 
     public static final int numRollerMotors = 1;
-    public static final double rollerReduction = 2.0;
+    public static final double rollerReduction = 1.0;
     public static final int numExtensionMotors = 1;
     public static final double extensionReduction = 9.0 * 19.0 / 18.0;
     public static final Mass mass = Kilograms.of(5);
@@ -31,7 +31,7 @@ public final class IntakeConstants {
     public static final InvertedValue extension1MotorInvertedValue = InvertedValue.Clockwise_Positive;
     public static final InvertedValue extension2MotorInvertedValue = InvertedValue.CounterClockwise_Positive;
 
-    public static final InvertedValue rollerMotorInvertedValue = InvertedValue.Clockwise_Positive;
+    public static final InvertedValue rollerMotorInvertedValue = InvertedValue.CounterClockwise_Positive;
 
     public static final Distance extensionTolerance = Inches.of(0.5);
     public static final Distance maximumExtension = Inches.of(12.0);

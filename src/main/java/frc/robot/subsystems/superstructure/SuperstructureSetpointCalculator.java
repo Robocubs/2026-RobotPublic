@@ -61,7 +61,7 @@ public class SuperstructureSetpointCalculator {
             Map.entry(6.20, 1.10));
 
     private static final InterpolatingDoubleTreeMap passingFlywheelVelocityMap =
-            InterpolatingDoubleTreeMap.ofEntries(Map.entry(3.0, 200.0), Map.entry(14.0, 500.0));
+            InterpolatingDoubleTreeMap.ofEntries(Map.entry(3.0, 200.0), Map.entry(14.0, 550.0));
     private static final Angle passingHoodAngle = Degrees.of(50);
 
     private static final AngularVelocity idleFlywheelVelocity = RadiansPerSecond.of(200.0);

@@ -22,6 +22,7 @@ import edu.wpi.first.units.LinearAccelerationUnit;
 import edu.wpi.first.units.LinearVelocityUnit;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
@@ -72,7 +73,7 @@ public final class DriveConstants {
             * TunerConstants.FrontLeft.SlipCurrent
             * 4
             * driveMotorGearRatio); // t = I * kt * numMotors * reduction
-    public static final LinearVelocity maxSpeed = MetersPerSecond.of(4.0);
+    public static final LinearVelocity maxSpeed = MetersPerSecond.of(3.75);
     public static final LinearAcceleration maxAcceleration = MetersPerSecondPerSecond.of(
             maxTorque.in(NewtonMeters) / wheelRadius.in(Meters) / RobotConstants.robotMass.in(Kilograms));
 
@@ -81,6 +82,11 @@ public final class DriveConstants {
 
     public static final double translationDeadband = 0.1;
     public static final double rotationDeadband = 0.1;
+
+    public static final Current driveDefaultSupplyCurrentLimit = TunerConstants.kDriveSupplyCurrentLimit;
+    public static final Current driveDefaultSupplyCurrentLowerLimit = TunerConstants.kDriveSupplyCurrentLowerLimit;
+    public static final Current driveBrownoutSupplyCurrent = Amps.of(30);
+    public static final Current driveStatorCurrentLimit = TunerConstants.kSlipCurrent;
 
     public static final LoggedTunableMeasure<LinearVelocityUnit, LinearVelocity> maxSmoothShootingSpeed =
             new LoggedTunableMeasure<>("Drive/MaxSmoothShootingSpeed", MetersPerSecond.of(1.5));

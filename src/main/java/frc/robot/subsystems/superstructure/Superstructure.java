@@ -365,8 +365,14 @@ public class Superstructure extends SubsystemBase {
                 .withName("Superstructure/TrackHubForPose");
     }
 
+    public void setBrownoutProtection(boolean enabled) {
+        indexer.setBrownoutProtection(enabled);
+        kicker.setBrownoutProtection(enabled);
+    }
+
     public Command zero() {
-        return Commands.runOnce(() -> {
+        return stop().withTimeout(1.0)
+                .andThen(() -> {
                     turret.resetPosition();
                 })
                 .ignoringDisable(true)

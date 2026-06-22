@@ -42,6 +42,7 @@ import edu.wpi.first.units.measure.Voltage;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
 import frc.robot.PhoenixCANBus;
+import frc.robot.util.PhoenixConfigurationThread;
 import frc.robot.util.PhoenixUtil;
 import frc.robot.util.tuning.LoggedTunableBoolean;
 import frc.robot.util.tuning.LoggedTunableNumber;
@@ -119,6 +120,8 @@ public class IntakeIOHardware implements IntakeIO {
     private final PositionVoltage extensionPositionControlRequest = new PositionVoltage(0.0).withSlot(1);
     private final VoltageOut extensionVoltageControlRequest = new VoltageOut(0.0);
 
+    private final PhoenixConfigurationThread configurationThread = new PhoenixConfigurationThread();
+
     public IntakeIOHardware() {
         leaderMotor = new TalonFX(leaderMotorId, PhoenixCANBus.canivore());
         followerMotor = new TalonFX(followerMotorId, PhoenixCANBus.canivore());
@@ -182,8 +185,8 @@ public class IntakeIOHardware implements IntakeIO {
                         .withInverted(rollerMotorInvertedValue))
                 .withCurrentLimits(new CurrentLimitsConfigs()
                         .withStatorCurrentLimit(Amps.of(120))
-                        .withSupplyCurrentLimit(Amps.of(40))
-                        .withSupplyCurrentLowerLimit(40));
+                        .withSupplyCurrentLimit(rollerDefaultSupplyCurrent)
+                        .withSupplyCurrentLowerLimit(rollerDefaultSupplyCurrent));
 
         PhoenixUtil.tryUntilOk(() -> leaderMotor.getConfigurator().apply(rollerConfig));
         PhoenixUtil.tryUntilOk(() -> followerMotor.getConfigurator().apply(rollerConfig));
@@ -352,10 +355,10 @@ public class IntakeIOHardware implements IntakeIO {
                     extension2Config.Slot1.kP = extensionKP.get();
                     extension2Config.Slot1.kD = extensionKD.get();
 
-                    PhoenixUtil.tryUntilOk(
-                            5, () -> extensionMotor1.getConfigurator().apply(extension1Config));
-                    PhoenixUtil.tryUntilOk(
-                            5, () -> extensionMotor2.getConfigurator().apply(extension2Config));
+                    configurationThread.tryUntilOk(
+                            () -> extensionMotor1.getConfigurator().apply(extension1Config));
+                    configurationThread.tryUntilOk(
+                            () -> extensionMotor2.getConfigurator().apply(extension2Config));
                 },
                 motionMagicMaxVelocity,
                 motionMagicMaxAcceleration,
@@ -425,6 +428,23 @@ public class IntakeIOHardware implements IntakeIO {
                 Rotations.of(position.in(Meters) / distancePerRotation.in(Meters) * extensionReduction));
         extensionMotor2.setPosition(
                 Rotations.of(position.in(Meters) / distancePerRotation.in(Meters) * extensionReduction));
+    }
+
+    @Override
+    public void setBrownoutProtection(boolean enabled) {
+        var rollerLimit = enabled ? rollerBrownoutSupplyCurrent : rollerDefaultSupplyCurrent;
+        rollerConfig.CurrentLimits.SupplyCurrentLimit = rollerLimit.in(Amps);
+        rollerConfig.CurrentLimits.SupplyCurrentLowerLimit = rollerLimit.in(Amps);
+        configurationThread.tryUntilOk(() -> leaderMotor.getConfigurator().apply(rollerConfig.CurrentLimits));
+        configurationThread.tryUntilOk(() -> followerMotor.getConfigurator().apply(rollerConfig.CurrentLimits));
+
+        var extensionLimit = enabled ? extensionBrownoutSupplyCurrent : extensionDefaultSupplyCurrent;
+        extension1Config.CurrentLimits.SupplyCurrentLimit = extensionLimit.in(Amps);
+        extension1Config.CurrentLimits.SupplyCurrentLowerLimit = extensionLimit.in(Amps);
+        extension2Config.CurrentLimits.SupplyCurrentLimit = extensionLimit.in(Amps);
+        extension2Config.CurrentLimits.SupplyCurrentLowerLimit = extensionLimit.in(Amps);
+        configurationThread.tryUntilOk(() -> extensionMotor1.getConfigurator().apply(extension1Config.CurrentLimits));
+        configurationThread.tryUntilOk(() -> extensionMotor2.getConfigurator().apply(extension2Config.CurrentLimits));
     }
 
     @Override

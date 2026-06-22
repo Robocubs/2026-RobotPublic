@@ -186,7 +186,13 @@ public class Turret {
     }
 
     public void resetPosition() {
-        io.resetPosition(Radians.zero());
+        var crtResult = easyCRT.getAngleOptional();
+        if (inputs.encoder1Connected && inputs.encoder2Connected && crtResult.isPresent()) {
+            io.resetPosition(crtResult.get());
+            inputs.position = crtResult.get();
+            hasBeenZeroed = true;
+            lastZeroedMeasuredError = easyCRT.getLastErrorRotations();
+        }
         lastPositionControl = Optional.empty();
     }
 

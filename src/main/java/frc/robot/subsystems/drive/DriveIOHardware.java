@@ -18,6 +18,7 @@ import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.StatusSignalCollection;
 import com.ctre.phoenix6.Utils;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -36,12 +37,14 @@ import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.RobotState.VisionMeasurement;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import frc.robot.util.PhoenixConfigurationThread;
 
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
 public class DriveIOHardware implements DriveIO {
     protected final SwerveDrivetrain<TalonFX, TalonFX, CANcoder> swerveDrivetrain;
     private final Queue<SwerveDriveInputs> inputsQueue = new ArrayBlockingQueue<>(20);
+    private final PhoenixConfigurationThread configurationThread = new PhoenixConfigurationThread();
     private final Lock inputsLock = new ReentrantLock();
     private final StatusSignalCollection statusSignals = new StatusSignalCollection();
     private final ModuleSignals frontLeftModuleSignals;
@@ -207,6 +210,23 @@ public class DriveIOHardware implements DriveIO {
                     measurement.pose.toPose2d(),
                     Utils.fpgaToCurrentTime(measurement.timestampSeconds),
                     measurement.stdDevs);
+        }
+    }
+
+    @Override
+    public void setBrownoutProtection(boolean enabled) {
+        var driveLimits = enabled
+                ? new CurrentLimitsConfigs()
+                        .withSupplyCurrentLimit(driveBrownoutSupplyCurrent)
+                        .withSupplyCurrentLowerLimit(driveBrownoutSupplyCurrent)
+                        .withStatorCurrentLimit(driveStatorCurrentLimit)
+                : new CurrentLimitsConfigs()
+                        .withSupplyCurrentLimit(driveDefaultSupplyCurrentLimit)
+                        .withSupplyCurrentLowerLimit(driveDefaultSupplyCurrentLowerLimit)
+                        .withStatorCurrentLimit(driveStatorCurrentLimit);
+        for (int i = 0; i < 4; i++) {
+            var driveMotor = swerveDrivetrain.getModule(i).getDriveMotor();
+            configurationThread.tryUntilOk(() -> driveMotor.getConfigurator().apply(driveLimits));
         }
     }
 }

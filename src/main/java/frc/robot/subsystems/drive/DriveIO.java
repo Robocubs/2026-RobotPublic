@@ -120,4 +120,6 @@ public interface DriveIO {
     public default void setNeutralMode(NeutralModeValue neutralMode) {}
 
     public default void addVisionMeasurements(VisionMeasurement[] measurements) {}
+
+    public default void setBrownoutProtection(boolean enabled) {}
 }

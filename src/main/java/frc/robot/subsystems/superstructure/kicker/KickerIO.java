@@ -35,5 +35,7 @@ public interface KickerIO {
 
     public default void setVoltage(Voltage voltage) {}
 
+    public default void setBrownoutProtection(boolean enabled) {}
+
     public default void stop() {}
 }

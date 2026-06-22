@@ -45,6 +45,10 @@ public class Indexer {
         io.stop();
     }
 
+    public void setBrownoutProtection(boolean enabled) {
+        io.setBrownoutProtection(enabled);
+    }
+
     public boolean isAtVelocity(AngularVelocity target) {
         return inputs.velocity.isNear(target, velocityTolerance.get());
     }

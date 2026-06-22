@@ -36,6 +36,9 @@ import static edu.wpi.first.wpilibj2.command.Commands.sequence;
 public class Intake extends SubsystemBase {
     private static final LoggedTunableNumber zeroRoutineOutput =
             new LoggedTunableNumber("Intake/ZeroRoutineOutput", 0.4);
+    private static final double maxOutput = 0.9;
+    private static final double minOutput = 0.5;
+
     private final IntakeIO io;
     private final IntakeInputsAutoLogged inputs = new IntakeInputsAutoLogged();
     private final PowerLogger leaderPowerLogger = new PowerLogger("IntakeLeader");
@@ -105,17 +108,16 @@ public class Intake extends SubsystemBase {
                     // Run intake if robot is moving toward intake or spinning
                     double rollerOutput;
                     var robotVelocity = RobotState.getInstance().getTargetRobotVelocity();
-                    var minOutput = 0.7;
-                    if (debouncer.calculate(robotVelocity.vxMetersPerSecond > -Constants.epsilon
+                    if (debouncer.calculate(robotVelocity.vxMetersPerSecond > Constants.epsilon
                             && MathUtil.isNear(0, robotVelocity.omegaRadiansPerSecond, 0.1))) {
                         rollerOutput = 0.0;
                     } else if (robotVelocity.vxMetersPerSecond > -DriveConstants.maxSpeed.in(MetersPerSecond) / 2) {
                         rollerOutput = minOutput;
                     } else {
-                        var halfMaxVelocity = DriveConstants.maxSpeed.in(MetersPerSecond);
+                        var halfMaxVelocity = DriveConstants.maxSpeed.in(MetersPerSecond) / 2;
                         rollerOutput = (Math.abs(robotVelocity.vxMetersPerSecond) - halfMaxVelocity)
                                         / halfMaxVelocity
-                                        * (1 - minOutput)
+                                        * (maxOutput - minOutput)
                                 + minOutput;
                     }
 
@@ -134,11 +136,13 @@ public class Intake extends SubsystemBase {
     }
 
     public Command intake() {
-        return run(() -> runSetpoint(IntakeConstants.extendedPosition, 1.0)).withName("Intake/Intake");
+        return run(() -> runSetpoint(IntakeConstants.extendedPosition, maxOutput))
+                .withName("Intake/Intake");
     }
 
     public Command reverse() {
-        return run(() -> runSetpoint(IntakeConstants.extendedPosition, -1.0)).withName("Intake/Reverse");
+        return run(() -> runSetpoint(IntakeConstants.extendedPosition, -maxOutput))
+                .withName("Intake/Reverse");
     }
 
     public Command stow() {
@@ -155,6 +159,10 @@ public class Intake extends SubsystemBase {
                                 .withTimeout(1.0))
                 .repeatedly()
                 .withName("Intake/Agitate");
+    }
+
+    public void setBrownoutProtection(boolean enabled) {
+        io.setBrownoutProtection(enabled);
     }
 
     public Command stop() {
@@ -174,7 +182,7 @@ public class Intake extends SubsystemBase {
                             inputs.extension1Position.gt(IntakeConstants.extendedRollerActivationPosition)
                                             && inputs.extension2Position.gt(
                                                     IntakeConstants.extendedRollerActivationPosition)
-                                    ? 0.9
+                                    ? minOutput
                                     : 0.0);
                 })
                 .until(() -> inputs.limitSwitch1 && inputs.limitSwitch2)

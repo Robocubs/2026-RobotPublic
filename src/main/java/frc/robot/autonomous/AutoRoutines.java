@@ -53,6 +53,90 @@ public class AutoRoutines {
         return new LoggedAutoRoutine(name, factory, drive, superstructure, intake);
     }
 
+    public AutoRoutine left2PassStraightStraight() {
+        return create("Left2PassStraightInside")
+                .requireStartingPose("Left1LoopStraight")
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("Left1LoopStraight")
+                .shoot()
+                .agitateIntake()
+                .followPath("LeftEndToStart")
+                .driveToFinalPose("LeftEndToStart", false, false, 2.0)
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("Left1LoopStraight")
+                .shoot()
+                .agitateIntake()
+                .followPath("LeftEndToStart")
+                .stowIntake()
+                .driveToFinalPose("LeftEndToStart", false, false)
+                .build();
+    }
+
+    public AutoRoutine right2PassStraightStraight() {
+        return create("Right2PassStraightInside")
+                .requireStartingPose("Right1LoopStraight")
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("Right1LoopStraight")
+                .shoot()
+                .agitateIntake()
+                .followPath("RightEndToStart")
+                .driveToFinalPose("RightEndToStart", false, false, 2.0)
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("Right1LoopStraight")
+                .shoot()
+                .agitateIntake()
+                .followPath("RightEndToStart")
+                .stowIntake()
+                .driveToFinalPose("RightEndToStart", false, false)
+                .build();
+    }
+
+    public AutoRoutine left2PassStraightInside() {
+        return create("Left2PassStraightInside")
+                .requireStartingPose("Left1LoopStraight")
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("Left1LoopStraight")
+                .shoot()
+                .agitateIntake()
+                .followPath("LeftEndToStart")
+                .driveToFinalPose("LeftEndToStart", false, false, 2.0)
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("Left1LoopInside")
+                .shoot()
+                .agitateIntake()
+                .followPath("LeftEndToStart")
+                .stowIntake()
+                .driveToFinalPose("LeftEndToStart", false, false)
+                .build();
+    }
+
+    public AutoRoutine right2PassStraightInside() {
+        return create("Left2PassStraightInside")
+                .requireStartingPose("Right1LoopStraight")
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("Right1LoopStraight")
+                .shoot()
+                .agitateIntake()
+                .followPath("RightEndToStart")
+                .driveToFinalPose("RightEndToStart", false, false, 2.0)
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("Right1LoopInside")
+                .shoot()
+                .agitateIntake()
+                .followPath("RightEndToStart")
+                .stowIntake()
+                .driveToFinalPose("RightEndToStart", false, false)
+                .build();
+    }
+
     public AutoRoutine fastLeftWithDepot() {
         return create("FastLeftWithDepot")
                 .requireStartingPose("FastLeft")
@@ -66,16 +150,44 @@ public class AutoRoutines {
                 .build();
     }
 
+    public AutoRoutine followLeft() {
+        return create("FollowLeft")
+                .requireStartingPose("FollowLeft")
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("FollowLeft", 0)
+                .shoot()
+                .followPath("FollowLeft", 1)
+                .agitateIntake()
+                .driveToFinalPose("FollowLeft", 1, false, true)
+                .build();
+    }
+
     public AutoRoutine fastLeft() {
+        var finalPose = new Pose2d(3.4, 5.6, Rotation2d.k180deg);
         return create("FastLeft")
                 .requireStartingPose("FastLeft")
                 .intake()
                 .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
                 .followPath("FastLeft", 0)
                 .shoot()
-                .driveToFinalPose("FastLeft", 1, true, true)
+                .driveToPose(finalPose, true, true)
                 .agitateIntake()
-                .driveToFinalPose("FastLeft", 1, false, true)
+                .driveToPose(finalPose, false, true)
+                .build();
+    }
+
+    public AutoRoutine fastRight() {
+        var finalPose = new Pose2d(3.4, 2.5, Rotation2d.k180deg);
+        return create("FastRight")
+                .requireStartingPose("FastRight")
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("FastRight", 0)
+                .shoot()
+                .driveToPose(finalPose, true, true)
+                .agitateIntake()
+                .driveToPose(finalPose, false, true)
                 .build();
     }
 
@@ -108,7 +220,19 @@ public class AutoRoutines {
                 .intakeEfficient()
                 .shoot()
                 .driveToStation(3)
+                .intake()
                 .followPath("StationToBump")
+                .agitateIntake()
+                .shoot(15)
+                .build();
+    }
+
+    public AutoRoutine depot() {
+        return create("Depot")
+                .intake()
+                .shoot()
+                .driveToDepot(3)
+                .followPath("Depot")
                 .agitateIntake()
                 .shoot(15)
                 .build();

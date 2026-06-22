@@ -29,6 +29,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.PhoenixCANBus;
+import frc.robot.util.PhoenixConfigurationThread;
 import frc.robot.util.PhoenixUtil;
 import frc.robot.util.tuning.LoggedTunableBoolean;
 import frc.robot.util.tuning.LoggedTunableNumber;
@@ -71,10 +72,11 @@ public class FlywheelIOHardware implements FlywheelIO {
     private final StatusSignal<Temperature> followerTemperatureSignal;
     private final StatusSignal<Double> closedLoopReferenceSignal;
 
-    private final VelocityVoltage velocityControlRequest = new VelocityVoltage(0.0).withSlot(0);
-    private final VelocityTorqueCurrentFOC velocityTorqueCurrentControlRequest =
-            new VelocityTorqueCurrentFOC(0.0).withSlot(1);
+    private final VelocityVoltage velocityVoltage = new VelocityVoltage(0.0).withSlot(0);
+    private final VelocityTorqueCurrentFOC velocityTorqueCurrent = new VelocityTorqueCurrentFOC(0.0).withSlot(1);
     private final VoltageOut voltageOut = new VoltageOut(0.0);
+
+    private final PhoenixConfigurationThread configurationThread = new PhoenixConfigurationThread();
 
     public FlywheelIOHardware() {
         this.leaderMotor = new TalonFX(leaderId, PhoenixCANBus.canivore());
@@ -174,8 +176,10 @@ public class FlywheelIOHardware implements FlywheelIO {
                     motorConfig.Slot1.kA = torqueKA.get();
                     motorConfig.Slot1.kP = torqueKP.get();
                     motorConfig.Slot1.kD = torqueKD.get();
-                    PhoenixUtil.tryUntilOk(() -> leaderMotor.getConfigurator().apply(motorConfig));
-                    PhoenixUtil.tryUntilOk(() -> followerMotor.getConfigurator().apply(motorConfig));
+                    configurationThread.tryUntilOk(
+                            () -> leaderMotor.getConfigurator().apply(motorConfig));
+                    configurationThread.tryUntilOk(
+                            () -> followerMotor.getConfigurator().apply(motorConfig));
                 },
                 kS,
                 kV,
@@ -192,10 +196,9 @@ public class FlywheelIOHardware implements FlywheelIO {
     @Override
     public void setVelocity(AngularVelocity velocity) {
         if (useTorqueCurrent.get()) {
-            leaderMotor.setControl(velocityTorqueCurrentControlRequest.withVelocity(velocity));
-
+            leaderMotor.setControl(velocityTorqueCurrent.withVelocity(velocity));
         } else {
-            leaderMotor.setControl(velocityControlRequest.withVelocity(velocity));
+            leaderMotor.setControl(velocityVoltage.withVelocity(velocity));
         }
     }
 

@@ -9,6 +9,7 @@ package frc.robot.subsystems.superstructure.indexer;
 
 import edu.wpi.first.units.AngularVelocityUnit;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import frc.robot.util.tuning.LoggedTunableMeasure;
 
@@ -19,6 +20,9 @@ public final class IndexerConstants {
 
     public static final double gearReduction = 9.0 * 30.0 / 24.0;
     public static final Distance wheelRadius = Inches.of(4.0);
+
+    public static final Current defaultSupplyCurrent = Amps.of(40);
+    public static final Current brownoutSupplyCurrent = Amps.of(30);
 
     public static final LoggedTunableMeasure<AngularVelocityUnit, AngularVelocity> velocityTolerance =
             new LoggedTunableMeasure<>("Indexer/VelocityTolerance", RadiansPerSecond.of(600 * 0.05 / gearReduction));

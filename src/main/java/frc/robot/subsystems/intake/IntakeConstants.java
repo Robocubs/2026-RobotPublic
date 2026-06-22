@@ -8,6 +8,7 @@
 package frc.robot.subsystems.intake;
 
 import com.ctre.phoenix6.signals.InvertedValue;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
@@ -27,6 +28,11 @@ public final class IntakeConstants {
     public static final double extensionReduction = 9.0 * 19.0 / 18.0;
     public static final Mass mass = Kilograms.of(5);
     public static final Distance distancePerRotation = Inches.of(Math.PI / 10.0 * 20.0);
+
+    public static final Current rollerDefaultSupplyCurrent = Amps.of(35);
+    public static final Current rollerBrownoutSupplyCurrent = Amps.of(20);
+    public static final Current extensionDefaultSupplyCurrent = Amps.of(30);
+    public static final Current extensionBrownoutSupplyCurrent = Amps.of(15);
 
     public static final InvertedValue extension1MotorInvertedValue = InvertedValue.Clockwise_Positive;
     public static final InvertedValue extension2MotorInvertedValue = InvertedValue.CounterClockwise_Positive;

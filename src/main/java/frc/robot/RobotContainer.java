@@ -9,11 +9,14 @@ package frc.robot;
 
 import java.util.Optional;
 
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.autonomous.AutoRoutines;
 import frc.robot.autonomous.LoggedAutoChooser;
 import frc.robot.commands.DriveCommands;
@@ -52,6 +55,7 @@ import frc.robot.subsystems.vision.VisionConstants;
 import frc.robot.subsystems.vision.apriltag.AprilTagIO;
 import frc.robot.subsystems.vision.apriltag.AprilTagIOHardware;
 import frc.robot.subsystems.vision.apriltag.AprilTagIOSim;
+import org.littletonrobotics.junction.AutoLogOutput;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
@@ -75,6 +79,10 @@ public class RobotContainer {
     // Other
     private final RobotState robotState = RobotState.getInstance();
     Optional<SimRobotState> simRobotState = Optional.empty();
+
+    // Brownout Protection
+    private boolean enableAutoBrownoutProtection = true;
+    private @AutoLogOutput boolean isRunningBrownoutProtection = false;
 
     public RobotContainer() {
         switch (Constants.currentMode) {
@@ -141,11 +149,18 @@ public class RobotContainer {
 
         var autoRoutines = new AutoRoutines(drive, superstructureScheduler, intakeScheduler);
 
+        autoChooser.addRoutine("Left2PassStraightStraight", autoRoutines::left2PassStraightStraight);
+        autoChooser.addRoutine("Right2PassStraightStraight", autoRoutines::right2PassStraightStraight);
+        autoChooser.addRoutine("Left2PassStraightInside", autoRoutines::left2PassStraightInside);
+        autoChooser.addRoutine("Right2PassStraightInside", autoRoutines::right2PassStraightInside);
+        autoChooser.addRoutine("FollowLeft", autoRoutines::followLeft);
         autoChooser.addRoutine("FastLeftWithDepot", autoRoutines::fastLeftWithDepot);
         autoChooser.addRoutine("FastLeft", autoRoutines::fastLeft);
+        autoChooser.addRoutine("FastRight", autoRoutines::fastRight);
         autoChooser.addRoutine("NewLeftFinalVersion", autoRoutines::newLeftFinalVersion);
         autoChooser.addRoutine("NewRightFinalVersion", autoRoutines::newRightFinalVersion);
         autoChooser.addRoutine("StationToBump", autoRoutines::stationToBump);
+        autoChooser.addRoutine("Depot", autoRoutines::depot);
         autoChooser.addRoutine("ShootInPlace", autoRoutines::shootInPlace);
         autoChooser.addRoutine("HairpinDepot", autoRoutines::hairpinDepot);
 
@@ -213,7 +228,40 @@ public class RobotContainer {
                 .povRight()
                 .whileTrue(parallel(intake.reverse(), superstructure.reverse()).withName("ReverseAll"));
 
+        driverController
+                .povLeft()
+                .onTrue(runOnce(() -> {
+                            enableAutoBrownoutProtection = false;
+                            isRunningBrownoutProtection = !isRunningBrownoutProtection;
+                            drive.setBrownoutProtection(isRunningBrownoutProtection);
+                            intake.setBrownoutProtection(isRunningBrownoutProtection);
+                            superstructure.setBrownoutProtection(isRunningBrownoutProtection);
+                        })
+                        .ignoringDisable(true)
+                        .withName("ToggleBrownoutProtection"));
+
+        new Trigger(() -> RobotController.isBrownedOut() && enableAutoBrownoutProtection)
+                .debounce(5.0, DebounceType.kFalling)
+                .onTrue(runOnce(() -> {
+                            isRunningBrownoutProtection = true;
+                            drive.setBrownoutProtection(true);
+                            intake.setBrownoutProtection(true);
+                            superstructure.setBrownoutProtection(true);
+                        })
+                        .ignoringDisable(true)
+                        .withName("EnableBrownoutProtection"))
+                .onFalse(runOnce(() -> {
+                            isRunningBrownoutProtection = false;
+                            drive.setBrownoutProtection(false);
+                            intake.setBrownoutProtection(false);
+                            superstructure.setBrownoutProtection(false);
+                        })
+                        .ignoringDisable(true)
+                        .unless(() -> !enableAutoBrownoutProtection)
+                        .withName("DisableBrownoutProtection"));
+
         // Dashboard bindings
         SmartDashboard.putData("ZeroIntake", intake.zeroRoutine());
+        SmartDashboard.putData("ZeroSuperstructure", superstructure.zero());
     }
 }

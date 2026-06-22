@@ -48,7 +48,8 @@ public class LoggedAutoRoutine {
     private final SubsystemScheduler<Intake> intake;
 
     private boolean bound = false;
-    private static final Pose2d stationPose = new Pose2d(0.688, 0.643, Rotation2d.kZero);
+    private static final Pose2d stationPose = new Pose2d(0.56, 0.643, Rotation2d.kZero);
+    private static final Pose2d depotPose = new Pose2d(1.4, 5.95, Rotation2d.kZero);
 
     public LoggedAutoRoutine(
             String name,
@@ -157,6 +158,13 @@ public class LoggedAutoRoutine {
                 .get();
     }
 
+    public Pose2d getFinalPose(String pathName) {
+        return routine.trajectory(pathName)
+                .getRawTrajectory()
+                .getFinalPose(false)
+                .get();
+    }
+
     public Pose2d getFinalPose(String pathName, int splitIndex) {
         return routine.trajectory(pathName, splitIndex)
                 .getRawTrajectory()
@@ -201,6 +209,12 @@ public class LoggedAutoRoutine {
         return this;
     }
 
+    public LoggedAutoRoutine driveToPose(Pose2d pose, boolean finishAtGoal, boolean slowMode) {
+        commands.add(drive.toPose(() -> GeometryUtil.autoFlip(pose), finishAtGoal, slowMode));
+        pathBuilder.add(pose);
+        return this;
+    }
+
     public LoggedAutoRoutine driveToInitialPose(String pathName) {
         driveToInitialPose(pathName, false);
         return this;
@@ -216,6 +230,24 @@ public class LoggedAutoRoutine {
         return this;
     }
 
+    public LoggedAutoRoutine driveToFinalPose(String pathName, boolean finishAtGoal, boolean slowMode) {
+        var initialPose = getFinalPose(pathName);
+        var initialPoseFlipped = GeometryUtil.autoFlip(initialPose);
+        commands.add(drive.toPose(() -> initialPoseFlipped, finishAtGoal, slowMode));
+        pathBuilder.add(initialPose);
+        return this;
+    }
+
+    public LoggedAutoRoutine driveToFinalPose(
+            String pathName, boolean finishAtGoal, boolean slowMode, double timeoutSeconds) {
+        var initialPose = getFinalPose(pathName);
+        var initialPoseFlipped = GeometryUtil.autoFlip(initialPose);
+        commands.add(
+                drive.toPose(() -> initialPoseFlipped, finishAtGoal, slowMode).withTimeout(timeoutSeconds));
+        pathBuilder.add(initialPose);
+        return this;
+    }
+
     public LoggedAutoRoutine driveToFinalPose(String pathName, int splitIndex, boolean finishAtGoal, boolean slowMode) {
         var initialPose = getFinalPose(pathName, splitIndex);
         var initialPoseFlipped = GeometryUtil.autoFlip(initialPose);
@@ -227,10 +259,20 @@ public class LoggedAutoRoutine {
     public LoggedAutoRoutine driveToStation(double seconds) {
         var stationPoseFlipped = GeometryUtil.autoFlip(stationPose);
         commands.add(drive.toPose(() -> stationPoseFlipped, true, true)
-                .until(() ->
-                        robotState.getPose().getTranslation().getDistance(stationPoseFlipped.getTranslation()) <= 0.2));
+                .until(() -> robotState.getPose().getTranslation().getDistance(stationPoseFlipped.getTranslation())
+                        <= 0.25));
         commands.add(drive.toPose(() -> stationPoseFlipped, false, true).withTimeout(Seconds.of(seconds)));
         pathBuilder.add(stationPose);
+        return this;
+    }
+
+    public LoggedAutoRoutine driveToDepot(double seconds) {
+        var depotPoseFlipped = GeometryUtil.autoFlip(depotPose);
+        commands.add(drive.toPose(() -> depotPoseFlipped, true, true)
+                .until(() ->
+                        robotState.getPose().getTranslation().getDistance(depotPoseFlipped.getTranslation()) <= 0.25));
+        commands.add(drive.toPose(() -> depotPoseFlipped, false, true).withTimeout(Seconds.of(seconds)));
+        pathBuilder.add(depotPose);
         return this;
     }
 

@@ -44,6 +44,8 @@ import static edu.wpi.first.wpilibj2.command.Commands.waitSeconds;
 import static frc.robot.subsystems.drive.DriveConstants.kinematics;
 
 public class Drive extends SubsystemBase {
+    private static final boolean enableGyroAutoReset = false;
+
     private final SwerveRequest.SwerveDriveBrake brakeRequest = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.ApplyRobotSpeeds applyRobotSpeedsRequest = new SwerveRequest.ApplyRobotSpeeds();
     private final SwerveRequest.ApplyFieldSpeeds applyFieldSpeedsRequest = new SwerveRequest.ApplyFieldSpeeds();
@@ -79,7 +81,6 @@ public class Drive extends SubsystemBase {
             backRightSteerPowerLogger);
     private final RobotState robotState = RobotState.getInstance();
     private final PathController choreoTrajectoryController = new PathController();
-    private final PowerDistribution pdh = new PowerDistribution(1, ModuleType.kRev);
     private final Alert gyroDisconnectedAlert = new Alert("Gyro Disconnected", AlertType.kWarning);
 
     private @Getter Rotation2d rawHeading = Rotation2d.kZero;
@@ -95,19 +96,21 @@ public class Drive extends SubsystemBase {
         robotState.setPoseResetConsumer(io::resetPose);
         robotState.setHeadingResetConsumer(io::resetRotation);
 
-        pdh.setSwitchableChannel(true);
-
         // Mitigation for pigeon going dead and needing power cycle to fix
-        var gyroConnectedDebouncer = new Debouncer(1.0);
-        var initTime = Timer.getTimestamp();
-        new Trigger(() -> gyroConnectedDebouncer.calculate(
-                        !driveInputs.gyroConnected && Timer.getTimestamp() > initTime + 30.0))
-                .onTrue(Commands.runOnce(() -> pdh.setSwitchableChannel(false))
-                        .andThen(waitSeconds(2.0))
-                        .andThen(() -> pdh.setSwitchableChannel(true))
-                        .andThen(waitSeconds(10.0))
-                        .ignoringDisable(true)
-                        .withName("Drive/RestartGyro"));
+        if (enableGyroAutoReset) {
+            var gyroConnectedDebouncer = new Debouncer(1.0);
+            var initTime = Timer.getTimestamp();
+            var pdh = new PowerDistribution(1, ModuleType.kRev);
+            pdh.setSwitchableChannel(true);
+            new Trigger(() -> gyroConnectedDebouncer.calculate(
+                            !driveInputs.gyroConnected && Timer.getTimestamp() > initTime + 30.0))
+                    .onTrue(Commands.runOnce(() -> pdh.setSwitchableChannel(false))
+                            .andThen(waitSeconds(1.0))
+                            .andThen(() -> pdh.setSwitchableChannel(true))
+                            .andThen(waitSeconds(10.0))
+                            .ignoringDisable(true)
+                            .withName("Drive/RestartGyro"));
+        }
     }
 
     @Override
@@ -185,6 +188,10 @@ public class Drive extends SubsystemBase {
 
     public void setNeutralMode(NeutralModeValue neutralMode) {
         io.setNeutralMode(neutralMode);
+    }
+
+    public void setBrownoutProtection(boolean enabled) {
+        io.setBrownoutProtection(enabled);
     }
 
     public DriveToPose toPose(Supplier<Pose2d> poseSupplier, boolean finishAtGoal, boolean slowMode) {

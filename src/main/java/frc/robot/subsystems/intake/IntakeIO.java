@@ -73,5 +73,7 @@ public interface IntakeIO {
 
     public default void setExtensionEncoderPosition(Distance position) {}
 
+    public default void setBrownoutProtection(boolean enabled) {}
+
     public default void stop() {}
 }

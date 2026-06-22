@@ -28,6 +28,7 @@ import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.Constants;
 import frc.robot.PhoenixCANBus;
+import frc.robot.util.PhoenixConfigurationThread;
 import frc.robot.util.PhoenixUtil;
 import frc.robot.util.tuning.LoggedTunableNumber;
 import frc.robot.util.tuning.LoggedTunableValue;
@@ -61,6 +62,8 @@ public class KickerIOHardware implements KickerIO {
     private final DutyCycleOut dutyCycleOut = new DutyCycleOut(0);
     private final VelocityVoltage velocityVoltage = new VelocityVoltage(0);
 
+    private final PhoenixConfigurationThread configurationThread = new PhoenixConfigurationThread();
+
     public KickerIOHardware() {
         motor = new TalonFX(motorId, PhoenixCANBus.canivore());
         motorConfig = new TalonFXConfiguration()
@@ -76,8 +79,8 @@ public class KickerIOHardware implements KickerIO {
                         .withKD(kD.get()))
                 .withCurrentLimits(new CurrentLimitsConfigs()
                         .withStatorCurrentLimit(Amps.of(120))
-                        .withSupplyCurrentLimit(Amps.of(25))
-                        .withSupplyCurrentLowerLimit(Amps.of(25)));
+                        .withSupplyCurrentLimit(defaultSupplyCurrent)
+                        .withSupplyCurrentLowerLimit(defaultSupplyCurrent));
         PhoenixUtil.tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
 
         positionSignal = motor.getPosition();
@@ -122,7 +125,7 @@ public class KickerIOHardware implements KickerIO {
                     motorConfig.Slot0.kA = kA.get();
                     motorConfig.Slot0.kP = kP.get();
                     motorConfig.Slot0.kD = kD.get();
-                    PhoenixUtil.tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
+                    configurationThread.tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
                 },
                 kS,
                 kV,
@@ -144,6 +147,14 @@ public class KickerIOHardware implements KickerIO {
     @Override
     public void setVoltage(Voltage voltage) {
         motor.setControl(voltageOut.withOutput(voltage));
+    }
+
+    @Override
+    public void setBrownoutProtection(boolean enabled) {
+        var limit = enabled ? brownoutSupplyCurrent : defaultSupplyCurrent;
+        motorConfig.CurrentLimits.SupplyCurrentLimit = limit.in(Amps);
+        motorConfig.CurrentLimits.SupplyCurrentLowerLimit = limit.in(Amps);
+        configurationThread.tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
     }
 
     @Override

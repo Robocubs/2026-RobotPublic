@@ -43,6 +43,10 @@ public class Kicker {
         io.stop();
     }
 
+    public void setBrownoutProtection(boolean enabled) {
+        io.setBrownoutProtection(enabled);
+    }
+
     public boolean isAtVelocity(AngularVelocity target) {
         return inputs.velocity.isNear(target, KickerConstants.velocityTolerance.get());
     }

@@ -198,8 +198,7 @@ public class AutoRoutines {
                 .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
                 .driveToInitialPose("NewLeftFinalVersion", true)
                 .followPath("NewLeftFinalVersion")
-                .agitateIntake()
-                .shoot(12.4)
+                .shootAndAgitate(15, 8)
                 .build();
     }
 
@@ -210,8 +209,7 @@ public class AutoRoutines {
                 .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
                 .driveToInitialPose("NewRightFinalVersion", true)
                 .followPath("NewRightFinalVersion")
-                .agitateIntake()
-                .shoot(12.4)
+                .shootAndAgitate(15, 8)
                 .build();
     }
 
@@ -252,7 +250,47 @@ public class AutoRoutines {
                 .build();
     }
 
+    public AutoRoutine leftWall() {
+        return create("LeftWall")
+                .requireStartingPose("LeftWall")
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("LeftWall", 0)
+                .shoot()
+                .driveToDepot(0)
+                .followPath("Depot")
+                .agitateIntake()
+                .driveToFinalPose("LeftWall", false, true)
+                .build();
+    }
+
+    public AutoRoutine leftSlowWall() {
+        return create("LeftSlowWall")
+                .requireStartingPose("LeftSlowWall")
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("LeftSlowWall", 0)
+                .shoot()
+                .followPath("LeftSlowWall", 1)
+                .agitateIntake()
+                .driveToFinalPose("LeftSlowWall", 1, false, true)
+                .build();
+    }
+
+    public AutoRoutine leftSlowWallNoDepot() {
+        return create("LeftSlowWallNoDepot")
+                .requireStartingPose("LeftSlowWall")
+                .intake()
+                .setSuperstructureState(SuperstructureState.TRACKING_HUB_FOR_POSE)
+                .followPath("LeftSlowWall", 0)
+                .shoot()
+                .oscillate(10)
+                .agitateIntake()
+                .oscillate(10)
+                .build();
+    }
+
     public AutoRoutine shootInPlace() {
-        return create("ShootInPlace").shootAndOscillate(20).build();
+        return create("ShootInPlace").shoot().oscillate(20).build();
     }
 }

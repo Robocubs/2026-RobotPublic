@@ -154,7 +154,7 @@ public class KickerIOHardware implements KickerIO {
         var limit = enabled ? brownoutSupplyCurrent : defaultSupplyCurrent;
         motorConfig.CurrentLimits.SupplyCurrentLimit = limit.in(Amps);
         motorConfig.CurrentLimits.SupplyCurrentLowerLimit = limit.in(Amps);
-        configurationThread.tryUntilOk(() -> motor.getConfigurator().apply(motorConfig));
+        configurationThread.tryUntilOk(() -> motor.getConfigurator().apply(motorConfig.CurrentLimits));
     }
 
     @Override

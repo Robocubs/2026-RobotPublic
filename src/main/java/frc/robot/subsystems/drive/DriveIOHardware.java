@@ -217,10 +217,14 @@ public class DriveIOHardware implements DriveIO {
     public void setBrownoutProtection(boolean enabled) {
         var driveLimits = enabled
                 ? new CurrentLimitsConfigs()
+                        .withSupplyCurrentLimitEnable(true)
+                        .withStatorCurrentLimitEnable(true)
                         .withSupplyCurrentLimit(driveBrownoutSupplyCurrent)
                         .withSupplyCurrentLowerLimit(driveBrownoutSupplyCurrent)
                         .withStatorCurrentLimit(driveStatorCurrentLimit)
                 : new CurrentLimitsConfigs()
+                        .withSupplyCurrentLimitEnable(true)
+                        .withStatorCurrentLimitEnable(true)
                         .withSupplyCurrentLimit(driveDefaultSupplyCurrentLimit)
                         .withSupplyCurrentLowerLimit(driveDefaultSupplyCurrentLowerLimit)
                         .withStatorCurrentLimit(driveStatorCurrentLimit);

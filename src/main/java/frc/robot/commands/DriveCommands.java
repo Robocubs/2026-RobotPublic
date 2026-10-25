@@ -10,6 +10,7 @@ package frc.robot.commands;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import edu.wpi.first.math.MathUtil;
@@ -164,21 +165,17 @@ public class DriveCommands {
 
     public static Command oscillate(Drive drive) {
         var smoothController = new SmoothDriveController();
-        var timer = new Timer();
-        // Square wave flips every 0.5s —> smooth controller ramps to it under maxSmoothAcceleration.
+        var omegaTarget = 1.5;
+        Function<Double, Command> turn = (Double omega) -> drive.run(() -> {
+                    smoothController.updateLoopTime();
+                    var smoothed = smoothController.smoothPassingAngularVelocity(omega);
+                    drive.setRobotSpeeds(new ChassisSpeeds(0, 0, smoothed));
+                })
+                .withTimeout(0.25);
         return drive.runOnce(() -> {
-                    timer.restart();
                     smoothController.resetFromMeasuredValues();
                 })
-                .andThen(drive.run(() -> {
-                    smoothController.updateLoopTime();
-                    double side = (timer.get() % 1.0) < 0.5 ? 1.0 : -1.0;
-                    var target = new Translation2d(
-                            0,
-                            side * DriveConstants.maxSmoothShootingSpeed.get().in(MetersPerSecond));
-                    var smoothed = smoothController.smoothShootingLinearVelocity(target);
-                    drive.setRobotSpeeds(new ChassisSpeeds(0, smoothed.getY(), 0));
-                }))
+                .andThen(Commands.repeatingSequence(turn.apply(omegaTarget), turn.apply(-omegaTarget)))
                 .withName("DriveOscillate");
     }
 

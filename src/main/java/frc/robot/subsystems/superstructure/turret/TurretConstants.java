@@ -38,8 +38,8 @@ public final class TurretConstants {
             (double) commonGearTeeth / (double) cancoder1Teeth * commonGearReduction;
     public static final double cancoder2Reduction =
             (double) commonGearTeeth / (double) cancoder2Teeth * commonGearReduction;
-    public static final Angle cancoder1Offset = Radians.of(2.673);
-    public static final Angle cancoder2Offset = Radians.of(0.462);
+    public static final Angle cancoder1Offset = Radians.of(2.608);
+    public static final Angle cancoder2Offset = Radians.of(0.423);
     public static final Angle crtMatchTolerance = Radians.of(0.1);
     public static final boolean encoder1Inverted = true;
     public static final boolean encoder2Inverted = true;

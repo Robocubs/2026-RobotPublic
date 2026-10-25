@@ -298,13 +298,12 @@ public class RobotState {
         }
 
         for (var measurement : measurements) {
+            var velocity = measurement.measuredSpeeds;
             poseBuffer.addSample(measurement.timestampSeconds, measurement.pose);
-            robotSpeed =
-                    MetersPerSecond.of(Math.hypot(robotVelocity.vxMetersPerSecond, robotVelocity.vyMetersPerSecond));
             robotLinearVelocityMetersPerSecondBuffer.addSample(
-                    measurement.timestampSeconds, robotSpeed.in(MetersPerSecond));
+                    measurement.timestampSeconds, Math.hypot(velocity.vxMetersPerSecond, velocity.vyMetersPerSecond));
             robotAngularVelocityRadiansPerSecondBuffer.addSample(
-                    measurement.timestampSeconds, robotVelocity.omegaRadiansPerSecond);
+                    measurement.timestampSeconds, velocity.omegaRadiansPerSecond);
         }
 
         var lastMeasurement = measurements[measurements.length - 1];
@@ -312,6 +311,7 @@ public class RobotState {
                 lastMeasurement.pose, lastMeasurement.measuredSpeeds, lastMeasurement.timestampSeconds);
         extendedHopperPose = calculateExtendedHopperPose();
         robotVelocity = lastMeasurement.measuredSpeeds;
+        robotSpeed = MetersPerSecond.of(Math.hypot(robotVelocity.vxMetersPerSecond, robotVelocity.vyMetersPerSecond));
         fieldVelocity = ChassisSpeeds.fromRobotRelativeSpeeds(robotVelocity, getHeading());
         targetRobotVelocity = lastMeasurement.targetSpeeds;
         targetFieldVelocity = ChassisSpeeds.fromRobotRelativeSpeeds(targetRobotVelocity, getHeading());

@@ -162,6 +162,9 @@ public class RobotContainer {
         autoChooser.addRoutine("StationToBump", autoRoutines::stationToBump);
         autoChooser.addRoutine("Depot", autoRoutines::depot);
         autoChooser.addRoutine("ShootInPlace", autoRoutines::shootInPlace);
+        autoChooser.addRoutine("LeftWall", autoRoutines::leftWall);
+        autoChooser.addRoutine("LeftSlowWall", autoRoutines::leftSlowWall);
+        autoChooser.addRoutine("LeftSlowWallNoDepot", autoRoutines::leftSlowWallNoDepot);
         autoChooser.addRoutine("HairpinDepot", autoRoutines::hairpinDepot);
 
         if (Constants.characterizationEnabled) {

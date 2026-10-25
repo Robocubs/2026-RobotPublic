@@ -348,11 +348,21 @@ public class LoggedAutoRoutine {
         return this;
     }
 
-    public LoggedAutoRoutine shootAndOscillate(double seconds) {
+    public LoggedAutoRoutine shootAndAgitate(double shootSeconds, double agitationDelay) {
         commands.add(deadline(
-                Commands.waitSeconds(seconds),
-                DriveCommands.oscillate(drive),
-                superstructure.schedule(s -> s.shoot())));
+                // Hold the robot still while shooting for shootSeconds, then the sequence continues
+                Commands.waitSeconds(shootSeconds),
+                drive.withRobotSpeeds(() -> new ChassisSpeeds()),
+                superstructure.schedule(s -> s.shoot()),
+                intake.schedule(i -> i.intake()
+                        .withTimeout(agitationDelay)
+                        .andThen(i.agitate())
+                        .withName(name))));
+        return this;
+    }
+
+    public LoggedAutoRoutine oscillate(double seconds) {
+        commands.add(deadline(Commands.waitSeconds(seconds), DriveCommands.oscillate(drive)));
         return this;
     }
 }

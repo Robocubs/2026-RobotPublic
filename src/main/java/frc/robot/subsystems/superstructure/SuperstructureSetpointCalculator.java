@@ -63,6 +63,7 @@ public class SuperstructureSetpointCalculator {
     private static final InterpolatingDoubleTreeMap passingFlywheelVelocityMap =
             InterpolatingDoubleTreeMap.ofEntries(Map.entry(3.0, 200.0), Map.entry(14.0, 550.0));
     private static final Angle passingHoodAngle = Degrees.of(50);
+    private static final Angle neutralTrackingHoodAngle = Degrees.of(30);
 
     private static final AngularVelocity idleFlywheelVelocity = RadiansPerSecond.of(200.0);
 
@@ -109,7 +110,7 @@ public class SuperstructureSetpointCalculator {
         }
 
         return new SuperstructureSetpoint(
-                idleFlywheelVelocity, passingHoodAngle, turretSetpoint.position(), turretSetpoint.velocity());
+                idleFlywheelVelocity, neutralTrackingHoodAngle, turretSetpoint.position(), turretSetpoint.velocity());
     }
 
     public SuperstructureSetpoint getSetpointForShooting() {
